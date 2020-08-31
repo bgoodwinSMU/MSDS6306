@@ -109,6 +109,24 @@ p
 #   Question 8, R   #
 #####################
 #Create a 3D plot of height vs. weight vs. year and color code the points by position
+library(devtools)
+library(rgl)
+library(gg3D)
+library(plotly)
+data2 <- bballDat%>%select(height,weight,position,year_start)
+data2
+
+data2$height <- as.factor(data2$height)
+data2
+fig <- plot_ly(data2, x = ~weight, y = ~height, z = ~year_start, color = ~position, colors = c('#BF382A', '#0C4B8E'))
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'Weight'),
+                     yaxis = list(title = 'Height'),
+                     zaxis = list(title = 'Start Year')))
+
+fig
+
+
 ```
 
 
@@ -128,3 +146,21 @@ g + geom_count(col="tomato3", show.legend=F) +
        x="Weight", 
        title="Weight Vs Start Year")
 ```
+
+
+##Question 10
+```{r}
+#####################
+#   Question 10, R   #
+#####################
+
+incomeDat <- read.csv("income.csv")
+incomeDat$Educ <- as.factor(incomeDat$Educ)
+incomeLm <- lm(Income2005~Educ,data=incomeDat)
+summary(incomeLm)
+plot(incomeLm)
+plot(incomeDat$Income2005,incomeDat$Educ)
+
+
+```
+
