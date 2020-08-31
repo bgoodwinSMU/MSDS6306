@@ -1,0 +1,112 @@
+---
+title: "Week 1"
+author: "Ben Goodwin"
+date: "8/24/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Question 1
+##Data Science Profile
+library(ggplot2)
+data <-read.csv("skills.csv")
+
+par(las=2) # make label text perpendicular to axis
+par(mar=c(5,8,4,2)) # increase y-axis margin.
+
+counts <- table(data$skills)
+level <- c(15,15,20,20,15,10,5)
+barplot(level, main="Data Science Profile", horiz=FALSE, names.arg=c("Data Viz","Machine learning","Mathematics","Statistics","Computer Science","Communication","Domain Expertise"), cex.names=0.5,col="light blue",yaxt='n')
+
+```
+
+# Simulator to Demonstrate CLT
+```{r}
+sample1 = rchisq(1000000,2)
+p<-hist(sample1, main ="Chi square with n=10000000 and DOF =2")
+
+meanSample1 = mean(sample1)
+sdSample1 =sd(sample1)
+
+
+
+```
+
+
+# Simulator to Demonstrate CLT
+
+## Control Parameters
+```{r}
+
+n1 = 10000000 # sample size per sample for 1st distribution
+n2 = 50 # sample size per sample for 2nd distribution (we will compare these distribuions) 
+simulations1 = 100 #number of samples and thus number of xbars we will generate.  
+simulations2 = 10000
+mu = 0; # mean parameter for use with normal distribuions
+sigma = 1; # standard deviation parameter for use with normal distribuions
+```
+
+## Data Holder
+```{r}
+xbar_holder1 = numeric(simulations1) # This will hold all the sample means for the first distribution.
+xbar_holder2 = numeric(simulations2) # This will hold all the sample means for the second distribution.
+sd_holder1 = numeric(simulations1)
+sd_holder2 = numeric(simulations2)
+```
+
+## Simulate and Store
+Generate 1000 samples each of size 10 and find the mean of each sample.  Then store each mean in the xbar_holder vector.
+
+```{r}
+for (i in 1:simulations1)
+{ 
+  sample1 = rchisq(n1,2)
+  
+  xbar1 = mean(sample1)
+  
+  sdS1 = sd(sample1)
+ 
+  xbar_holder1[i] = xbar1
+ 
+  sd_holder1[i] = sdS1
+ 
+}
+
+for (i in 1: simulations2) {
+  sample2 = rchisq(n2,2)
+  xbar2 = mean(sample2)
+  sdS2 = sd(sample2)
+  xbar_holder2[i] = xbar2
+  sd_holder2[i] = sdS2
+}
+```
+
+## display the distribution of sample means (plot a histogram of the sample means)
+```{r}
+par(mfrow = c(2,1))
+hist(xbar_holder1, col = "blue", main = paste("Distribution of the sample mean: n = ", n1), xlab = "Dist 1 Sample Means", xlim = c(0,5))
+hist(xbar_holder2, col = "red", main = paste("Distribution of the sample mean: n = ", n2), xlab = "Dist 2 Sample Means", xlim = c(-4,4))
+```
+
+```{r}
+vals =c(25,19,37,29,40,28,31)
+xbar = mean(vals)
+s = sd(vals)
+mu0 = 21
+n=7
+t <- (xbar-mu0)/(s/sqrt(n))
+t
+
+alpha = .05 
+t.half.alpha = qt(1-alpha/2, df=n-1) 
+c(-t.half.alpha, t.half.alpha) 
+
+pval = 2*pt(t,df=n-1)
+pval
+pt(xbar,6)
+```
+
