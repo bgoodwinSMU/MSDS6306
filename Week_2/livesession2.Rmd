@@ -15,17 +15,12 @@ knitr::opts_chunk$set(echo = TRUE)
 #####################
 #   Question 1, R   #
 #####################
-
 #Libraries
 library(ggplot2)
-
-
-
 bballDat <- read.csv("bballplayers.csv")
 head(bballDat)
 bballDat <- bballDat[-2143,]
 View(bballDat1)#tail(bballDat)
-
 #Convert Position data to table
 counts <- table(bballDat$position)
 View(counts)
@@ -34,16 +29,11 @@ View(counts)
 counts <- as.data.frame(counts)
 View(counts)
 View(bballDat)
-
 counts <- counts[-1,]
 View(counts)
-
-
 p<-ggplot(counts, aes(x=Var1, y=Freq, color=Var1)) +geom_bar(stat="identity")
 p+xlab("Player Position")+ylab("Frequency of player position")+theme_minimal()+ labs(title = "Player Positions and Frequencies")+ theme(legend.position = "none")+scale_x_discrete(labels=c("C" = "Center", "C-F" = "Center-Forward",
                               "F" = "Forward","F-C" = "Forward-Center","F-G" = "Forward-Guard","G" = "Guard","G-F" = "Guard-Forward"))+geom_text(aes(label=Freq), vjust=1.6, color="blue", size=3.5)
-
-
 ```
 
 ##Question 2
@@ -51,20 +41,14 @@ p+xlab("Player Position")+ylab("Frequency of player position")+theme_minimal()+ 
 #####################
 #   Question 2, R   #
 #####################
-
 #libraries
 library(dplyr)
-
 center <- bballDat %>% filter(position == "C")
 forward <- bballDat %>% filter(position=="F")
-
-
 centerForward <- full_join(center,forward)
-
 t <- ggplot(centerForward, aes(x=position, y=weight)) + geom_boxplot()+xlab("Player Position")+ylab("Weight")+theme_minimal()+labs(title = "Player Positions and Weights")+scale_x_discrete(labels=c("C" = "Center", 
 "F" = "Forward"))
 t
-
 ```
 ##Question 3
 ```{r}
@@ -73,10 +57,7 @@ t
 #####################
 center <- bballDat %>% filter(position == "C")
 forward <- bballDat %>% filter(position=="F")
-
-
 centerForward <- full_join(center,forward)
-
 t <- ggplot(data=centerForward, aes(x=position, y=height, fill=position)) +geom_bar(stat="identity", position=position_dodge())+xlab("Player Position")+ylab("Height")+theme_minimal()+labs(title = "Player Positions and Weights")+scale_x_discrete(labels=c("C" = "Center", "F" = "Forward"))+ theme(legend.position = "none")
 t
 ```
@@ -86,13 +67,8 @@ t
 #####################
 #   Question 4, R   #
 #####################
-
-
 t <- ggplot(bballDat, aes(x=position, y=height,fill=position)) + geom_bar(stat="identity")+xlab("Player Position")+ylab("Height")+theme_minimal()+labs(title = "Player Positions and Heights")+scale_x_discrete(labels=c("C" = "Center", "C-F" = "Center-Forward","F" = "Forward","F-C" = "Forward-Center","F-G" = "Forward-Guard","G" = "Guard","G-F" = "Guard-Forward"))+ theme(axis.ticks.y=element_blank(), axis.text.y=element_blank())
 t
-
-
-
 ```
 ##Question 5
 
@@ -104,30 +80,16 @@ bballDat$height <- as.numeric(bballDat$height)
 lmHeightWeight <- lm(height~weight,data=bballDat)
 summary(lmHeightWeight)
 plot(lmHeightWeight)
-
-
 p <- plot(height~weight,bballDat)
 p
-
-
-
-
-
-
-
-
 ```
 ```{r}
 #####################
 #   Question 6, R   #
 #####################
-
 allPositions <- bballDat %>% select(height,weight,position)
-
-
 t <- ggplot(allPositions, aes(x=height, y=weight,fill=position)) + geom_boxplot()+xlab("Player Height")+ylab("Player Weight")+theme_minimal()+labs(title = "Player Positions, Weights, and Heights ")+scale_x_discrete(labels=c("C" = "Center", "C-F" = "Center-Forward","F" = "Forward","F-C" = "Forward-Center","F-G" = "Forward-Guard","G" = "Guard","G-F" = "Guard-Forward"))
 t
-
 heightWeightPositionlm <- lm(height~weight+position, data=allPositions)
 summary(heightWeightPositionlm)
 plot(heightWeightPositionlm)
@@ -140,8 +102,6 @@ plot(heightWeightPositionlm)
 p<-ggplot(data=bballDat, aes(x=year_start, y=height)) +
   geom_bar(stat="identity")+ theme(axis.ticks.x=element_blank(), axis.text.x=element_blank())+ylab("Height")+xlab("Stating Year")
 p
-
-
 ```
 ##Question 8
 ```{r}
@@ -149,11 +109,6 @@ p
 #   Question 8, R   #
 #####################
 #Create a 3D plot of height vs. weight vs. year and color code the points by position
-
-
-
-
-
 ```
 
 
@@ -163,7 +118,6 @@ p
 #####################
 #   Question 9, R   #
 #####################
-
 library(ggplot2)
 # Scatterplot
 theme_set(theme_bw())  # pre-set the bw theme.
@@ -174,4 +128,3 @@ g + geom_count(col="tomato3", show.legend=F) +
        x="Weight", 
        title="Weight Vs Start Year")
 ```
-
