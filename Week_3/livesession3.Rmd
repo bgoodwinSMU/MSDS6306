@@ -1,0 +1,66 @@
+---
+title: "Live Session 3"
+author: "Ben Goodwin"
+date: "9/3/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+#####Libraries#######
+#####################
+library(dplyr)      
+library(tidyr)      
+library(GGally)
+library(ggplot2)
+#####################
+```
+
+##Question 1
+
+```{r}
+#####################
+#   Question 1, R   #
+#####################
+
+#Using the FIFA player data set, filter the data set to create a dataframe that has just the Left Midfielders (LM) and Left Forwards #(LF).  
+
+#Read in data and check it
+playerDat <- read.csv("players.csv")
+head(playerDat)
+#View(playerDat)
+
+#Use dplyr functions to create a data frame with LM and LF
+dfQ1 <- playerDat %>% filter(playerDat$Position=="LM" | playerDat$Position =="LF" )
+
+#Examine and make sure everything is correct
+dfQ1
+```
+
+
+##Question 2
+```{r}
+#####################
+#   Question 2, R   #
+#####################
+
+#Use Ggally and ggpairs() and the dataset you created above above, to plot the categorical variable Position (LM and LF), versus the continuous variables Acceleration and Agility.  
+
+#Create new df from question 1 df, filter by position and accleration #and agility
+dfQ2 <- dfQ1 %>% select(Position,Acceleration,Agility)
+
+#Look to see if dpylr worked correctly
+dfQ2 
+
+#Plot it
+plot(dfQ2)
+
+dfQ2 %>% ggpairs(., mapping = ggplot2::aes(colour=Target),lower = list(continuous = wrap("smooth", alpha = 0.3, size=0.1)),cardinality_threshold = 100)
+        
+        
+```
+
