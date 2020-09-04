@@ -57,10 +57,84 @@ dfQ2 <- dfQ1 %>% select(Position,Acceleration,Agility)
 dfQ2 
 
 #Plot it
-plot(dfQ2)
+(dfQ2)
 
-dfQ2 %>% ggpairs(., mapping = ggplot2::aes(colour=Target),lower = list(continuous = wrap("smooth", alpha = 0.3, size=0.1)),cardinality_threshold = 100)
+dfQ2 %>% ggpairs(., mapping = ggplot2::aes(colour=Position),lower = list(continuous = wrap("smooth", alpha = 0.3, size=0.1)))
         
         
 ```
+```{r}
+#Your client would like to formally test if the mean agility rating of left midfielders is different than that of #the left forwards.  Perform a 6 – step t-test to test for the difference in these means.  (You may skip step 2 #(draw and shade) if you like.  If you are unfamiliar with the 6-step hypothesis test, see Stat 1 slides or the #Bridge Course to review the 6-step hypothesis test.)
+
+#####################
+#   Question 4, R   #
+#####################
+
+#Live session questions
+#Slide 9, CI question
+data1 <- c(25,19,37,29,40,28,31)
+xbar <-mean(data1)
+me<-2.447*(7.08/sqrt(7))
+xbar-me
+xbar+me
+sd(data1)
+t <- ((xbar-21)/(sd(data1)/sqrt(7)))
+t
+pt(t,6)
+
+#checking
+t.test(x=data1, mu=21, conf.level=0.95)
+2*pt(3.309315, 6, lower=FALSE)
+
+
+
+#Extract position data and agility data
+
+dfQ3 <- dfQ2 %>% select(Position,Agility)
+dfQ32 <- dfQ2 %>% select(Position,Agility)
+
+#Test df
+dfQ3
+
+#Collect means on each position (LF first)
+LFmean <- dfQ3 %>% filter(dfQ3$Position =="LF") %>% select(Agility)
+
+
+#Mean on LM, need to create a new variable for LM data since lines 100-102 ate LM data
+LMmean <- dfQ32 %>% filter(dfQ3$Position =="LM") %>% select(Agility)
+
+
+#Now actually run test
+t.test(LFmean, LMmean)
+
+##Looks like FTR
+
+```
+
+
+##Question 5
+
+```{r}
+
+#Are the assumptions of this test reasonably met?  If you have not had Stat 1, simply create a histogram of the agility scores for both groups (LM and LF) and given what you know about the CLT, comment on if you believe the sampling distribution of sample means (of your sample size) will be reasonably normal.  In addition, does there look like there is significant visual evidence to suggest the standard deviations are different? ….. If you have had Stat 1, create the plots listed above (and any other plots you might prefer) and be prepared to be a teacher and teach what you know about the assumptions of the t-test and if those are assumption are reasonably met here.
+
+
+
+#####################
+#   Question 5, R   #
+#####################
+
+
+
+p <- ggplot(data = dfQ3, aes(x = Agility,color=Position)) + geom_histogram(binwidth = 3)
+p + facet_wrap(~Position)+theme_linedraw()
+
+sd(LMmean$Agility)
+sd(LFmean$Agility)
+
+
+
+
+```
+
 
