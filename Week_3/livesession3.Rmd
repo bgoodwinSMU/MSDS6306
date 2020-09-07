@@ -140,16 +140,34 @@ sd(LFmean$Agility)
 
 ```{r}
 
-
+#Select/create at least 2 categorical variables and select two continuous variables and perform an EDA.  Also, at least one of the categorical variables should be created from a continuous variable (using the cut() function).
 
 
 #####################
 #   Question 2, R   #
 #####################
 
-#Select/create at least 2 categorical variables and select two continuous variables and perform an EDA.  Also, at least one of the categorical variables should be created from a continuous variable (using the cut() function).   
+
+playerDat <- playerDat[-c(7021,1,2,3),]
+
+dfQ2a <- playerDat %>% select(Body.Type,Jersey.Number)
 
 
+#Plot Body type versus jersey number
+ggplot(dfQ2a, aes(x=Body.Type, y= Jersey.Number)) +
+        geom_boxplot()+xlab("Player Body Type")+ylab("Jersey Number")+theme_light()+theme_linedraw()
 
+#Plot using cut
+#Convert contract valid until into 12 groups
+c1 <- cut(as.numeric(playerDat$Contract.Valid.Until), breaks = 12)
+c2 <- playerDat$Position
+
+#plot player position versus contract end year
+
+dfPlot3 <- as.data.frame(c1,c2)
+dfPlot3
+
+ggplot(dfPlot3, aes(x=c1, y= c2, color=c2)) +
+        geom_jitter()+xlab("Contract End date")+ylab("Player Position")+theme_minimal()+theme(legend.position = "none")+theme(axis.text.x=element_blank())
 ```
 
