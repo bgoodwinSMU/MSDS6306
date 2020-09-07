@@ -138,3 +138,18 @@ sd(LFmean$Agility)
 ```
 
 
+```{r}
+
+
+
+
+#####################
+#   Question 2, R   #
+#####################
+
+#Select/create at least 2 categorical variables and select two continuous variables and perform an EDA.  Also, at least one of the categorical variables should be created from a continuous variable (using the cut() function).   
+
+
+
+```
+
