@@ -1,0 +1,280 @@
+---
+title: "Live Session 6"
+author: "Ben Goodwin"
+date: "9/28/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+######################
+#                    #
+#     Libraries      #
+#                    #
+######################
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(class)
+library(caret)
+library(dummies)
+library(FNN)
+library(jsonlite)
+library(RCurl)
+library(rjson)
+library(plyr)
+library(sjPlot)
+
+```
+
+
+```{r}
+######################
+#                    #
+#    Question 1,R    #
+#     Pull data      #
+######################
+
+
+
+#Get data from the URL
+data <- getURL("https://public.opendatasoft.com/api/records/1.0/search/?dataset=titanic-passengers&rows=2000&facet=survived&facet=pclass&facet=sex&facet=age&facet=embarked")
+
+#Take raw data and into readable json
+jsonDat <- fromJSON(data)
+
+#Use ldply to convert to df, and then data is tidyed
+tidyDat <- ldply (jsonDat$records, data.frame)
+View(tidyDat)
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+######################
+#                    #
+#    Question 2,R    #
+#                    #
+######################
+
+
+#Remove all columns except, age, class, and survived
+knnDat <- tidyDat
+knnDat <- knnDat[,-c(1,2,3,4,5,7,9,11,12,13,14,15)]
+
+
+#Subet into training and testing
+#80/20 split
+smp_size <- floor(0.80 * nrow(knnDat))
+set.seed(2472190)
+
+train_ind <- sample(seq_len(nrow(knnDat)), size = smp_size)
+
+#initalize vectors for training and testing
+train <- knnDat[train_ind, ]
+test <- knnDat[-train_ind, ]
+
+#View(train)
+#Changed survived column to character
+#train$fields.survived <-sapply(as.character(train$fields.survived), switch, 'No' = 0, 'Yes' = 1)
+#test$fields.survived<-sapply(as.character(test$fields.survived), switch, 'No' = 0, 'Yes' = 1)
+#Remove NAs from Age Class and Survived
+
+
+train_age <- na.omit(train$age)
+train_age_average <- mean(train_age)
+train$age[is.na(train$age)] <- train_age_average
+
+test_age <- na.omit(test$age)
+test_age_average <- mean(test_age)
+test$age[is.na(test$age)] <- test_age_average
+
+train_pclass <- na.omit(train$pclass)
+train_pclass_average <- mean(train_pclass)
+train$pclass[is.na(train$pclass)] <- train_age_average
+train_pclass_average <- ceiling(train_pclass_average) 
+
+test_pclass <- na.omit(test$pclass)
+test_pclass_average <- mean(test_pclass)
+test$pclass[is.na(test$pclass)] <- test_age_average
+test_pclass_average <- ceiling(test_pclass_average) 
+
+test <- na.omit(test)
+train <- na.omit(train)
+# Normalize Fare and Class columns
+normalize <- function(x) {
+  num <- x - min(x)
+  denom <- max(x) - min(x)
+  return (num/denom)
+}
+
+train_pclass <- normalize(train$pclass)
+test_pclass <- normalize(test$pclass)
+
+
+survived <- train$survived
+
+
+
+
+knnResult <- knn(train = train[,1:2], test = test[,1:2], cl = survived, k=10)
+table(test$survived,knnResult)
+
+confusionMatrix(table(knnResult,test$survived))
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+######################
+#                    #
+#    Question 3,R    #
+#                    #
+######################
+
+#Use your age and predict your survival based on each of the ticket classes.  
+titantic_train <- tidyDat
+titantic_train <- na.omit(titantic_train)
+
+View(titantic_train)
+
+survival27P1 = titantic_train %>% filter(Survived==1|Survived==0|Age==27)
+df =data.frame(Age=27,Pclass=1)
+knn(survival27P1[,c(2,3)],df,survival27P1$Survived,k=5,prob = TRUE)
+View(survival27P1[,c(2,3)])
+survival27P2 = titantic_train %>% filter(Survived==1|Survived==0)
+df =data.frame(Age=27,Pclass=2)
+knn(survival27P2[,c(2,3)],df,survival27P2$Survived,k=5,prob = TRUE)
+
+survival27P3 = titantic_train %>% filter(Survived==1|Survived==0)
+df =data.frame(Age=27,Pclass=3)
+knn(survival27P3[,c(2,3)],df,survival27P3$Survived,k=30,prob = TRUE)
+
+```
+
+
+
+
+
+```{r}
+######################
+#                    #
+#    Question 4,R    #
+#                    #
+######################
+
+#Use your model to classify the 418 randomly selected passengers in the test set (titanic_test.csv) on github.    
+
+#Remove columns 
+titantic_train <- read.csv("titantic_train.csv")
+titantic_train <- na.omit(titantic_train)
+
+titantic_train <- titantic_train[-c(4,5,9,11,12)]
+
+
+#Subet into training and testing
+#80/20 split
+smp_size <- floor(0.80 * nrow(titantic_train))
+set.seed(2472190)
+
+train_ind <- sample(seq_len(nrow(titantic_train)), size = smp_size)
+
+#initalize vectors for training and testing
+train <- titantic_train[train_ind, ]
+test <- titantic_train[-train_ind, ]
+
+#View(train)
+#Changed survived column to character
+#train$fields.survived <-sapply(as.character(train$fields.survived), switch, 'No' = 0, 'Yes' = 1)
+#test$fields.survived<-sapply(as.character(test$fields.survived), switch, 'No' = 0, 'Yes' = 1)
+#Remove NAs from Age Class and Survived
+
+
+survived <- train$Survived
+knnResult <- knn(train = train, test = test, cl = survived, k=10)
+table(test$Survived,knnResult)
+
+confusionMatrix(table(knnResult,test$Survived))
+
+
+
+
+```
+
+```{r}
+######################
+#                    #
+#    Question 4,R    #
+#                    #
+######################
+
+#For the full (multinomial) IRIS data (the iris dataset in R), do a 70-30 train/test cross validation with k =1 - 90 and use sepal length and width as predictors.  Make a plot of k (xaxis) versus accuracy.  Use this plot to tune the hyperparameter k.  What do you feel is the best value of k?  
+
+
+#Remove all columns except, age, class, and survived
+irisDat <- iris
+
+#Subet into training and testing
+#80/20 split
+smp_size <- floor(0.70 * nrow(irisDat))
+set.seed(2472190)
+
+train_ind <- sample(seq_len(nrow(irisDat)), size = smp_size)
+
+#initalize vectors for training and testing
+train <- irisDat[train_ind, ]
+test <- irisDat[-train_ind, ]
+
+
+
+#Use the Iris data set to perform an interval 150-fold CV for a k-NN model with k = 10. Please calculate the sensitivity from this fit, and submit it as your answer. Round your answer to two decimal places.
+
+set.seed(12420352)
+irisDat[,1:2] <- scale(irisDat[,1:2])
+setosa<- rbind(irisDat[irisDat$Species=="setosa",])
+versicolor<- rbind(irisDat[irisDat$Species=="versicolor",])
+virginica<- rbind(irisDat[irisDat$Species=="virginica",])
+
+
+ind <- sample(1:nrow(setosa), nrow(setosa)*0.7)
+iris.train<- rbind(setosa[ind,], versicolor[ind,], virginica[ind,])
+iris.test<- rbind(setosa[-ind,], versicolor[-ind,], virginica[-ind,])
+iris[,1:2] <- scale(iris[,1:2])
+
+iris_pred <- knn(train = iris.train[,1:2], test = iris.test[,1:2], cl = iris.train$Species, k=10)
+
+table(iris.test$Species,iris_pred)
+confusionMatrix(table(iris_pred,iris.test$Species))
+
+
+set.seed(400)
+ctrl <- trainControl(method="repeatedcv",repeats = 3) #,classProbs=TRUE,summaryFunction = twoClassSummary)
+knnFit <- train(Species ~ ., data = train, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
+
+#Output of kNN fit
+knnFit
+
+plot(knnFit)
+
+```
+
+
+
+
