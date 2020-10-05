@@ -1,0 +1,164 @@
+---
+title: "Live Session 7"
+author: "Ben Goodwin"
+date: "10/5/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+######################
+#                    #
+#     Libraries      #
+#                    #
+######################
+library(e1071)
+
+
+
+
+
+```
+
+
+
+```{r}
+######################
+#                    #
+#    Question 1,R    #
+#                    #
+######################
+
+#Using all 891 observations, train a NB model with Age and Pclass as predictors and use this model to predict the survival of a 30 year old passenger in the 1, 2 and 3 classes.  Use the “type = raw” option to look at the predicted percentage of each outcome. (One slide.)
+
+#Get data from the URL
+data <- getURL("https://public.opendatasoft.com/api/records/1.0/search/?dataset=titanic-passengers&rows=2000&facet=survived&facet=pclass&facet=sex&facet=age&facet=embarked")
+
+#Take raw data and into readable json
+jsonDat <- fromJSON(data)
+
+#Convert to df, and then data is tidyed
+tidyDat <- (jsonDat$records$fields)
+
+#Clean data 
+titanicClean = tidyDat %>% filter(!is.na(age) & !is.na(pclass))
+
+#Set seed to produce consistent results 
+set.seed(4)
+
+#Examine df
+#View(tidyDat)
+
+#Create new DF from df 
+NBdat <- dplyr::select(titanicClean,age,pclass,survived)
+
+#Convert pclass and survied into factors
+#NBdat$pclass <- as.factor(NBdat$pclass)
+NBdat$survived <- as.factor(NBdat$survived)
+
+#Split up training and testing data
+trainIndices = sample(seq(1:length(NBdat$age)),round(.7*length(NBdat$age)))
+trainTitanic = NBdat[trainIndices,]
+testTitanic = NBdat[-trainIndices,]
+
+#Create NB model
+model = naiveBayes(trainTitanic[,c(1,2)],trainTitanic$survived)
+
+#Passenger 1, 30 years and pclass 1
+predict(model,data.frame(age=30,pclass=1))
+predict(model,data.frame(age=30,pclass=1), type = "raw")
+
+#Passenger 2, 30 years and pclass 2
+predict(model,data.frame(age=30,pclass=2))
+predict(model,data.frame(age=30,pclass=2), type = "raw")
+
+#Passenger 3, 30 years and pclass 3
+predict(model,data.frame(age=30,pclass=3))
+predict(model,data.frame(age=30,pclass=3), type = "raw")
+
+
+
+
+```
+
+
+```{r}
+######################
+#                    #
+#    Question 2,R    #
+#                    #
+######################
+
+
+#Train a NB model based on the training set using just the Age and Pclass variables. Use the model to predict the survival of those in the test set and use those results to evaluate the model based on accuracy, sensitivity and specificity. Finally, Compare the results to what you found with the KNN classifier. (At least one slide.)
+
+
+#read data
+titanticTrain <- read.csv("titantic_train.csv")
+titanticTrain$Survived <- ifelse(titanticTrain$Survived=="0", "No", "Yes")
+
+titanticTest <- read.csv("titantic_test.csv")
+
+
+#clean data
+titanicClean = titanticTrain %>% filter(!is.na(Age) & !is.na(Pclass))
+titanticTest = titanticTest %>% filter(!is.na(Age) & !is.na(Pclass))
+#Convert to factors
+titanicClean$Survived <- as.factor(titanicClean$Survived)
+titanicClean$Age <- as.factor(titanicClean$Age)
+titanicClean$Pclass <- as.factor(titanicClean$Pclass)
+
+
+titanticTest$Age <- as.factor(titanticTest$Age)
+titanticTest$Pclass <- as.factor(titanticTest$Pclass)
+
+
+
+
+#Set seed to produce consistent results 
+set.seed(4)
+
+
+#Create new DF from df 
+NBdat <- dplyr::select(titanicClean,Age,Pclass,Survived)
+
+#Create NB model
+model = naiveBayes(Survived~.,data = NBdat)
+titanticTest$Survied <- predict(model,titanticTest[,c(2,5)])
+
+
+Predict <- predict(model,newdata = titanticTest )
+model$apriori
+df = data.frame(Age = "30", Pclass = "1")
+predict(model,df) #just classifications
+predict(model,df, type = "raw") 
+
+
+```
+
+
+
+
+```{r}
+#NB classification
+iterations = 100
+masterAcc = matrix(nrow = iterations)
+for(j in 1:iterations)
+{
+  model = naiveBayes(trainTitanic[,c(1,2)],trainTitanic$survived)
+  table(predict(model,testTitanic[,c(1,2)]),testTitanic$survived)
+  CM = confusionMatrix(table(predict(model,testTitanic[,c(1,2)]),testTitanic$survived))
+  masterAcc[j] = CM$overall[1]
+}
+
+#Mean accurary
+MeanAcc = colMeans(masterAcc)
+MeanAcc
+
+#Confusion matrix
+CM
+```
+
