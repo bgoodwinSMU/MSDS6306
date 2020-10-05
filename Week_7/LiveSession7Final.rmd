@@ -1,0 +1,248 @@
+---
+title: "Live Session 7"
+author: "Ben Goodwin"
+date: "10/5/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+######################
+#                    #
+#     Libraries      #
+#                    #
+######################
+library(e1071)
+
+
+
+
+
+```
+
+
+
+```{r}
+######################
+#                    #
+#    Question 1,R    #
+#                    #
+######################
+
+#Using all 891 observations, train a NB model with Age and Pclass as predictors and use this model to predict the survival of a 30 year old passenger in the 1, 2 and 3 classes.  Use the “type = raw” option to look at the predicted percentage of each outcome. (One slide.)
+
+#Get data from the URL
+data <- getURL("https://public.opendatasoft.com/api/records/1.0/search/?dataset=titanic-passengers&rows=2000&facet=survived&facet=pclass&facet=sex&facet=age&facet=embarked")
+
+#Take raw data and into readable json
+jsonDat <- fromJSON(data)
+
+#Convert to df, and then data is tidyed
+tidyDat <- (jsonDat$records$fields)
+
+#Clean data 
+titanicClean = tidyDat %>% filter(!is.na(age) & !is.na(pclass))
+
+#Set seed to produce consistent results 
+set.seed(4)
+
+#Examine df
+#View(tidyDat)
+
+#Create new DF from df 
+NBdat <- dplyr::select(titanicClean,age,pclass,survived)
+
+#Convert pclass and survied into factors
+#NBdat$pclass <- as.factor(NBdat$pclass)
+NBdat$survived <- as.factor(NBdat$survived)
+
+#Split up training and testing data
+trainIndices = sample(seq(1:length(NBdat$age)),round(.7*length(NBdat$age)))
+trainTitanic = NBdat[trainIndices,]
+testTitanic = NBdat[-trainIndices,]
+
+#Create NB model
+model = naiveBayes(trainTitanic[,c(1,2)],trainTitanic$survived)
+
+#Passenger 1, 30 years and pclass 1
+predict(model,data.frame(age=30,pclass=1))
+predict(model,data.frame(age=30,pclass=1), type = "raw")
+
+#Passenger 2, 30 years and pclass 2
+predict(model,data.frame(age=30,pclass=2))
+predict(model,data.frame(age=30,pclass=2), type = "raw")
+
+#Passenger 3, 30 years and pclass 3
+predict(model,data.frame(age=30,pclass=3))
+predict(model,data.frame(age=30,pclass=3), type = "raw")
+
+
+
+
+```
+
+
+```{r}
+######################
+#                    #
+#    Question 2,R    #
+#                    #
+######################
+
+
+#Train a NB model based on the training set using just the Age and Pclass variables. Use the model to predict the survival of those in the test set and use those results to evaluate the model based on accuracy, sensitivity and specificity. Finally, Compare the results to what you found with the KNN classifier. (At least one slide.)
+
+set.seed(58181)
+#NB classification
+iterations = 100
+masterAcc = matrix(nrow = iterations)
+for(j in 1:iterations)
+{
+  trainIndices = sample(seq(1:length(NBdat$age)),round(.7*length(NBdat$age)))
+  trainTitanic = NBdat[trainIndices,]
+  testTitanic = NBdat[-trainIndices,]
+  model = naiveBayes(trainTitanic[,c(1,2)],trainTitanic$survived)
+  table(predict(model,testTitanic[,c(1,2)]),testTitanic$survived)
+  CM = confusionMatrix(table(predict(model,testTitanic[,c(1,2)]),testTitanic$survived))
+  masterAcc[j] = CM$overall[1]
+}
+
+#Mean accurary
+MeanAcc = colMeans(masterAcc)
+MeanAcc
+
+#Confusion matrix
+CM
+
+
+```
+
+
+
+
+```{r}
+#Write a loop to repeat the above for 100 different values of the seed.  Find the average of the accuracy, sensitivity and specificity to get a stable (smaller variance) statistic to evaluate the model.  (At least one slide.)
+
+
+
+#NB classification
+iterations = 1000
+masterAcc = matrix(nrow = iterations,ncol=3)
+for(j in 1:iterations)
+{
+  set.seed(j)
+  trainIndices = sample(seq(1:length(NBdat$age)),round(.7*length(NBdat$age)))
+  trainTitanic = NBdat[trainIndices,]
+  testTitanic = NBdat[-trainIndices,]
+  model = naiveBayes(trainTitanic[,c(1,2)],trainTitanic$survived)
+  table(predict(model,testTitanic[,c(1,2)]),testTitanic$survived)
+  CM = confusionMatrix(table(predict(model,testTitanic[,c(1,2)]),testTitanic$survived))
+  masterAcc[j,1] = CM$overall[1]
+  masterAcc[j,2] = CM$byClass[1]
+  masterAcc[j,3] = CM$byClass[2]
+  
+}
+
+#Mean accuracy
+MeanAcc = colMeans(masterAcc)
+MeanAcc
+
+#Confusion matrix
+CM
+
+
+```
+
+
+```{r}
+#Now add Sex to the model so that it has Age, Pclass and Sex in the NB model.  Use the trainTitanic(set.seed(4)) dataframe to train the model and create a confusion matrix using the testTitanic dataframe.  In addition, find the Accuracy, Sensitivity and Specificity. (1 slide)
+#Get data from the URL
+data2 <- getURL("https://public.opendatasoft.com/api/records/1.0/search/?dataset=titanic-passengers&rows=2000&facet=survived&facet=pclass&facet=sex&facet=age&facet=embarked")
+
+#Take raw data and into readable json
+jsonDat2 <- fromJSON(data2)
+
+#Convert to df, and then data is tidyed
+tidyDat2 <- (jsonDat2$records$fields)
+
+#Clean data 
+titanicClean2 = tidyDat2 %>% filter(!is.na(age) & !is.na(pclass) & !is.na(sex))
+
+#Set seed to produce consistent results 
+set.seed(4)
+
+#Examine df
+#View(tidyDat)
+
+#Create new DF from df 
+NBdat2 <- dplyr::select(titanicClean2,sex,age,pclass,survived)
+
+#Convert pclass and survied into factors
+#NBdat$pclass <- as.factor(NBdat$pclass)
+NBdat2$survived <- as.factor(NBdat2$survived)
+
+iterations = 1000
+masterAcc = matrix(nrow = iterations,ncol=3)
+for(j in 1:iterations)
+{
+  set.seed(j)
+  trainIndices = sample(seq(1:length(NBdat2$age)),round(.7*length(NBdat2$age)))
+  trainTitanic = NBdat2[trainIndices,]
+  testTitanic = NBdat2[-trainIndices,]
+  model = naiveBayes(trainTitanic[,c(1,3)],trainTitanic$survived)
+  table(predict(model,testTitanic[,c(1,3)]),testTitanic$survived)
+  CM = confusionMatrix(table(predict(model,testTitanic[,c(1,3)]),testTitanic$survived))
+  masterAcc[j,1] = CM$overall[1]
+  masterAcc[j,2] = CM$byClass[1]
+  masterAcc[j,3] = CM$byClass[2]
+  
+}
+
+#Mean accuracy
+MeanAcc = colMeans(masterAcc)
+MeanAcc
+
+#Confusion matrix
+CM
+
+
+
+
+
+
+```
+
+
+```{r}
+#For the full (multinomial) IRIS data (the iris dataset in R), do a 70-30 train/test cross validation and use sepal length and width as predictors.  Generate 100 different train/test splits and calculate the average accuracy, sensitivity and specificity.  Compare the average accuracy to that to the KNN model you used in Unit 6.  
+irisDat <- iris
+iterations = 100
+masterAcc = matrix(nrow = iterations,ncol=3)
+for(j in 1:iterations)
+{
+
+
+trainIndices = sample(seq(1:length(irisDat$Sepal.Length)),round(.7*length(irisDat$Sepal.Length)))
+trainIris = irisDat[trainIndices,]
+testIris = irisDat[-trainIndices,]
+model = naiveBayes(trainIris[,c(1,2)],trainIris$Species)
+table(predict(model,testIris[,c(1,2)]),testIris$Species)
+CM = confusionMatrix(table(predict(model,testIris[,c(1,2)]),testIris$Species))
+masterAcc[j,1] = CM$overall[1]
+masterAcc[j,2] = CM$byClass[1]
+masterAcc[j,3] = CM$byClass[2]
+
+}
+
+#Mean accuracy
+MeanAcc = colMeans(masterAcc)
+MeanAcc
+
+#Confusion matrix
+CM
+
+```
+
