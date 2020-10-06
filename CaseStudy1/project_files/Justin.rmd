@@ -1,0 +1,62 @@
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(GGally)
+library(readr)
+library(tibble)
+library(tidyverse)
+
+#Gather data sets from files and tidy data.
+setwd("C:/Users/justi/Google Drive/_SMU/6306 Doing Data Science/Case Study 01")
+beers <- read.csv(file = "Beers.csv")
+breweries <- read.csv( file = "Breweries.csv")
+# Q1 How many breweries in each state?
+
+brewByState <- breweries %>% group_by(State) %>% count()
+brewByState$State <- as.factor(brewByState$State)
+colnames(brewByState)[2] <- "Breweries"
+write.table(brewByState, sep="\t", quote = FALSE)
+
+
+brewByState %>% ggplot(aes(y=State, x= Breweries, fill = State)) +
+geom_bar(stat = "identity", show.legend = FALSE) +
+xlab("Number of Breweries") +
+theme_bw() +
+labs(title = "Breweries by State in the USA",
+subtitle = "Budweiser Consultation",
+x = "Number of Breweries")
+
+# Q2 Merge tables
+buzzbrews <- merge(breweries, beers, by.x = "Brew_ID", by.y = "Brewery_id", all = TRUE )
+buzzbrews <- buzzbrews %>% rename( Brewery = Name.x, "Beer Name" = Name.y)
+names(buzzbrews)
+
+
+# Deal with NA's in each Column
+sapply(buzzbrews, function(x) sum(is.na(x)))
+
+buzzbrews %>% filter(is.na(ABV)) %>% select("Brewery", "Beer Name", "ABV", "IBU") %>% print()
+
+buzzbrews %>% filter(.[2] == "Brewery Vivant") %>% select("Brewery", "Beer Name", "ABV", "IBU") %>% print()
+
+buzzbrews %>% filter(.[5] == "Righteous Ale") %>% select("Brewery", "Beer Name", "ABV", "IBU") %>% print()
+
+### Why some beers don't have ABV listings ###
+#blogpost about Righteous Ale and not posting ABV:
+#https://www.beeradvocate.com/community/threads/breweries-not-listing-abv-on-their-packaged-product.577462/#:~:text=The%20reason%20is%20simple%20and,in%20advance%20for%20label%20approval.
+#The Righteous Ale and some of our other barrel-aged beers are the only ones where you will see the ABV listed on the bottom of the can. All other times the ABV is prominently displayed on the front of the can and the cardboard wrap.
+#The reason is simple and clear: as a brewer, we do not know the exact ABV for the final blended version of a barrel-aged beer. However, the can has to be registered months in advance for label approval.
+#So what we do is register the can, and then print the ABV on the bottom of the can along with the code date once the final lab results come in with the exact ABV prior to packaging.
+#Hope this creates a better understanding.
+# Also
+7
+# https://vinepair.com/articles/ask-adam-why-do-some-beers-not-have-abv-on-the-label-isnt-this-illegal/
+# ..."thanks to Coors, if you want to list the ABV of your beer on the label, you can, but you don’t have to. At least not due to a federal mandate. Some states may require the breweries in their states to list ABV, but that is up to the states"
+### ...and ###
+## Also: https://www.realbeer.com/you-too-can-be-a-smartypants-why-some-beers-dont-have-abv-on-the-label-isnt-it-illegal/
+# Not it’s not illegal, actually the opposite. After Prohibition was repealed, Congress passed a law in 1935 that banned the listing of alcohol content on cans and bottles of brew. The thinking was that if the beers prominently listed their alcohol content, it would cause breweries to compete in “strength wars,” attempting to make the strongest beers. The ban on listing alcohol content on beer lasted until 1995 when the Coors Brewing Company successfully challenged the law.
+# and regarding IBUs, they aren't necessary or a legality, rather an indicator of beer bitterness (but not really - that's a whole other project) Here's some quick reading: https://www.thebrewenthusiast.com/ibus
+#..."IBU measurement involves spectrometers, isooctanes, industrial grade acids, and complicated/expensive machinery like centrifuges...Basically, commercial breweries have this equipment, and measure IBUs, as a quality control tool."
+# Q4/ Q5 - since it is apparent that mixed batches and aged batches of beer might not have ABVs available and smaller breweries might not have the equipment to calculate IBU, I suggest we null those out for the quantitative sampling and report them as a null set rolled up for iBU's and call it something like "Craft Beers not measured"
+# Q6 - histogram and qqchart? or boxplot and points?
+# Q7 - we can talk about these at a later date.
