@@ -1,0 +1,314 @@
+---
+title: "Cast Study 1"
+author: "Ben Goodwin"
+date: "10/6/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+######################
+#                    #
+#     Libraries      #
+#                    #
+######################
+
+######################
+library(usmap)
+library(ggplot2)
+library(dplyr)
+######################
+
+
+######################
+#                    #
+#        Data        #
+#                    #
+######################
+
+
+########################################################
+#read in brewery data
+breweryDat <- read.csv("breweries.csv")
+#Ensure structure of data is compliant 
+#head(breweryDat)
+
+#read in beer data
+beerDat <- read.csv("beerDat.csv")
+#Ensure structure of data is compliant 
+#head(beerDat)
+########################################################
+
+
+```
+
+#Instructions
+You can assume that your audience is the CEO and CFO of Budweiser (your client) and that they only have had one class in statistics and have indicated that you cannot take more than 7 minutes of their time. 20% of your grade will be based on the presentation. 
+
+They have hired you to answer the 7 questions listed below and beyond those general questions you may speculate / anticipate what may be of interest to them
+
+
+
+
+```{r}
+######################
+#                    #
+#     Question 1     #
+#                    #
+######################
+
+########################################################
+#How many breweries are present in each state?
+########################################################
+
+#########################################################
+#Use Dplyr to group breweries by state
+brewByState <- breweryDat %>% group_by(State) %>% count()
+#########################################################
+
+#########################################################
+#Add breweries by state to state information dataframe
+statepop$brewByState <- brewByState$n
+#########################################################
+
+#########################################################
+#Fix mismatched state brewery count to state info df
+statepop[1,5] <- 3
+statepop[2,5] <- 7
+statepop[3,5] <- 11
+statepop[4,5] <- 2
+statepop[8,5] <- 2
+statepop[9,5] <- 1
+statepop[14,5] <- 18
+statepop[15,5] <- 22
+statepop[16,5] <- 5
+statepop[20,5] <- 9
+statepop[22,5] <- 23
+statepop[25,5] <- 2
+statepop[26,5] <- 9
+statepop[28,5] <- 5
+statepop[29,5] <- 2
+statepop[30,5] <- 3
+statepop[32,5] <- 4
+statepop[34,5] <- 19
+statepop[33,5] <- 16
+statepop[35,5] <- 1
+statepop[45,5] <- 4
+statepop[46,5] <- 10
+statepop[47,5] <- 16
+statepop[49,5] <- 1
+statepop[50,5] <- 20
+#Check data 
+#View(statepop)
+#View(brewByState)
+#########################################################
+
+
+#########################################################
+#Call plot functions to plot state brewery count on USmap
+nationBrewPlot <- plot_usmap(data = statepop, values = "brewByState",labels=TRUE, color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma) + theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+
+#display plot
+nationBrewPlot
+#########################################################
+
+
+#########################################################
+#Break down by region, NE first
+NEplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .new_england,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+NEplot
+#########################################################
+
+#########################################################
+#Break down by region, Mid Atlantic second
+MAplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .mid_atlantic,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+MAplot
+#########################################################
+
+
+#########################################################
+#Break down by region, East North Central third
+ENCplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .east_north_central,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+ENCplot
+#########################################################
+
+#########################################################
+#Break down by region, West North Central fourth
+WNCplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .west_north_central,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+WNCplot
+#########################################################
+
+#########################################################
+#Break down by region, South Atlantic fifth
+SAplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .south_atlantic,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+SAplot
+#########################################################
+
+#########################################################
+#Break down by region, East South Central sixth
+ESCplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .east_south_central,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+ESCplot
+#########################################################
+
+#########################################################
+#Break down by region, West South Central seventh
+WSCplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .west_south_central,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+WSCplot
+#########################################################
+
+#########################################################
+#Break down by region, Mountain eighth 
+Mplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .mountain,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+Mplot
+#########################################################
+
+#########################################################
+#Break down by region, Pacific ninth 
+Pplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .pacific,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+Pplot
+#########################################################
+
+
+```
+
+```{r}
+######################
+#                    #
+#     Question 2     #
+#                    #
+######################
+
+#############################################################################################################
+#Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
+#############################################################################################################
+
+#Use Dplyr package to merge the two tables together
+buzzbrews <- merge(breweryDat, beerDat, by.x = "Brew_ID", by.y = "Brewery_id", all = TRUE )
+
+#Use Dplyr package to rename "Name.x" to "Brewery" and "Name.y" to "Beer"
+buzzbrews <- dplyr::rename(buzzbrews, "Brewery" = "Name.x","Beer"="Name.y")
+
+#Check the results
+#View(buzzbrews)
+
+
+
+
+```
+
+```{r}
+######################
+#                    #
+#     Question 3     #
+#                    #
+######################
+
+###########################################
+#Address the missing values in each column
+###########################################
+
+iterations <- length(buzzbrews$Brew_ID)
+
+
+#Loop to fix numbering for Column 1 "brew ID"
+for (i in 1:iterations) {
+  buzzbrews[i,1]=i
+}
+
+#Loops to find NA
+for(j in 1:iterations){
+  for(k in 1:10){
+    if(is.na(buzzbrews[j,k])){
+  buzzbrews[j,k]="0"
+}
+  }
+}
+
+#Check DF for results
+View(buzzbrews)
+
+```
+
+```{r}
+######################
+#                    #
+#     Question 4     #
+#                    #
+######################
+
+#############################################################################################################
+#Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare
+#############################################################################################################
+```
+
+```{r}
+######################
+#                    #
+#     Question 5     #
+#                    #
+######################
+
+#############################################################################################################
+#Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+#############################################################################################################
+```
+
+
+```{r}
+######################
+#                    #
+#     Question 6     #
+#                    #
+######################
+
+#############################################################################################################
+#Comment on the summary statistics and distribution of the ABV variable.
+#############################################################################################################
+```
+
+```{r}
+######################
+#                    #
+#     Question 7     #
+#                    #
+######################
+
+#############################################################################################################
+#Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+#############################################################################################################
+```
+
+```{r}
+######################
+#                    #
+#     Question 8     #
+#                    #
+######################
+
+#############################################################################################################
+#Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually
+#############################################################################################################
+
+#############################################################################################################
+#In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.
+#############################################################################################################
+```
+
+```{r}
+######################
+#                    #
+#     Question 9     #
+#                    #
+######################
+
+#############################################################################################################
+#Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
+#############################################################################################################
+
+
+```
+
+
