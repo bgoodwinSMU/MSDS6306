@@ -57,18 +57,69 @@ statepop[50,5] <- 20
 #View(brewByState)
 #########################################################
 
-#########################################################
-#Call plot functions to plot state brewery count on USmap
-plot_usmap(data = statepop, values = "brewByState", color = "red") + 
-  scale_fill_continuous(name = "brewbyState", label = scales::comma) + 
-  theme(legend.position = "right")+labs(title = "Total Brewery Count Per State")
-#########################################################
 
 #########################################################
 #Call plot functions to plot state brewery count on USmap
-plot_usmap(data = statepop, values = "brewByState", color = "red") + 
-  scale_fill_continuous(
-    low = "white", high = "red", name = "brewByState", label = scales::comma
-  ) + theme(legend.position = "right")+labs(title = "Total Brewery Count Per State")
+nationBrewPlot <- plot_usmap(data = statepop, values = "brewByState",labels=TRUE, color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma) + theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+
+#display plot
+nationBrewPlot
 #########################################################
+
+
+#########################################################
+#Break down by region, NE first
+NEplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .new_england,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+NEplot
+#########################################################
+
+#########################################################
+#Break down by region, Mid Atlantic second
+MAplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .mid_atlantic,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+MAplot
+#########################################################
+
+
+#########################################################
+#Break down by region, East North Central third
+ENCplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .east_north_central,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+ENCplot
+#########################################################
+
+#########################################################
+#Break down by region, West North Central fourth
+WNCplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .west_north_central,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+WNCplot
+#########################################################
+
+#########################################################
+#Break down by region, South Atlantic fifth
+SAplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .south_atlantic,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+SAplot
+#########################################################
+
+#########################################################
+#Break down by region, East South Central sixth
+ESCplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .east_south_central,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+ESCplot
+#########################################################
+
+#########################################################
+#Break down by region, West South Central seventh
+WSCplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .west_south_central,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+WSCplot
+#########################################################
+
+#########################################################
+#Break down by region, Mountain eighth 
+Mplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .mountain,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+Mplot
+#########################################################
+
+#########################################################
+#Break down by region, Pacific ninth 
+Pplot <- plot_usmap(data=statepop, values = "brewByState",labels = TRUE,include = .pacific,color = "grey73") + scale_fill_continuous(low = "purple", high = "green", name = "Brewery Count", label = scales::comma)+ theme(legend.position = "bottom")+labs(title = "Total Brewery Count Per State")
+Pplot
+#########################################################
+
 
