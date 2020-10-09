@@ -210,24 +210,155 @@ buzzbrews <- dplyr::rename(buzzbrews, "Brewery" = "Name.x","Beer"="Name.y")
 #Address the missing values in each column
 ###########################################
 
-iterations <- length(buzzbrews$Brew_ID)
-
-
 #Loop to fix numbering for Column 1 "brew ID"
+iterations <- length(buzzbrews$Brew_ID)
 for (i in 1:iterations) {
   buzzbrews[i,1]=i
 }
 
-#Loops to find NA
-for(j in 1:iterations){
-  for(k in 1:10){
-    if(is.na(buzzbrews[j,k])){
-  buzzbrews[j,k]="0"
+#Fix no style beers to none
+levels(buzzbrews$Style) <- c(levels(buzzbrews$Style), "none")
+for (i in 1:iterations) {
+  if(is.na(buzzbrews[i,9])){
+  }
 }
+for (i in 1:iterations) {
+  if((buzzbrews[i,9])==''){
+    print(buzzbrews[i,9])
+    buzzbrews[i,9]="none"
   }
 }
 
-#Check DF for results
+
+View(buzzbrews)
+
+#Prep new df to contain style and averages
+#Create a data frame with each style and a variable for average IBU
+
+styleCount <- as.data.frame(levels(buzzbrews$Style))
+styleCount$`levels(buzzbrews$Style)` <- as.character(styleCount$`levels(buzzbrews$Style)`)
+#Initialize mean ibu to zero (to avoid problems with N/As)
+styleCount$meanIbu <- 0
+#Make beer count to keep track of total in each style
+styleCount$beerCount <- 0
+#Make column for total ibus
+styleCount$totalIBU <- 0
+
+styleCount$meanABV <- 0
+styleCount$ABVbeerCount <- 0
+styleCount$totalABV <- 0
+
+
+
+#Checking
+#View(styleCount)
+styleCount <- styleCount[-c(1), ]
+View(styleCount)
+#Calculate mean IBU for each category and store it in IBU df
+
+#Calculate average IBU for each style and add it to df
+#outer loop for all the beers
+ibuSum <- 0
+beerCount <- 0
+i <- 1
+
+for (i in 1:iterations) {
+  if(is.na(buzzbrews[i,8])) {
+   buzzbrews[i,8]=0
+  }
+  
+  #inner for each style
+  for (j in 1:100) {
+   
+    if(buzzbrews[i,9]==styleCount[j,1]){
+     
+     #Compute IBU sum
+     styleCount[j,4] <- styleCount[j,4]+buzzbrews[i,8]
+     
+     
+     
+     #Total of each beer count
+     styleCount[j,3] <- styleCount[j,3]+1
+     
+     if(buzzbrews[i,8]==0){
+       styleCount[j,3] <- styleCount[j,3]-1
+     }
+    
+     
+     
+    }
+    #Mean IBU for each style
+    styleCount[j,2] <- styleCount[j,4]/styleCount[j,3]
+    }
+
+}
+
+
+#Add average column from style count to buzzbrews df
+for (i in 1:iterations) {
+  if(buzzbrews[i,8]==0){
+    for(j in 1:100){
+      if(buzzbrews[i,9]==styleCount[j,1]){
+        buzzbrews[i,8]=styleCount[j,2]
+      }
+    }
+  }
+}
+
+View(styleCount)
+View(buzzbrews)
+
+#Now do it all again for ABV
+
+#Calculate average ABV for each style and add it to df
+#outer loop for all the beers
+AlcSum <- 0
+AlcVeerCount <- 0
+i <- 1
+
+for (i in 1:iterations) {
+  if(is.na(buzzbrews[i,7])) {
+   buzzbrews[i,7]=0
+  }
+  
+  #inner for each style
+  for (j in 1:100) {
+   
+    if(buzzbrews[i,9]==styleCount[j,1]){
+     
+     #Compute ALC sum
+     styleCount[j,7] <- styleCount[j,7]+buzzbrews[i,7]*100
+     
+     
+     
+     #Total of each beer count
+     styleCount[j,6] <- styleCount[j,6]+1
+     
+     if(buzzbrews[i,7]==0){
+       styleCount[j,6] <- styleCount[j,6]-1
+     }
+    
+     
+     
+    }
+    #Mean ABV for each style
+    styleCount[j,5] <- (styleCount[j,7]/styleCount[j,6])
+    }
+
+}
+
+
+#Add average column from style count to buzzbrews df
+for (i in 1:iterations) {
+  if(buzzbrews[i,7]==0){
+    for(j in 1:100){
+      if(buzzbrews[i,9]==styleCount[j,1]){
+        buzzbrews[i,7]=styleCount[j,5]
+      }
+    }
+  }
+}
+
 View(buzzbrews)
 
 ```
