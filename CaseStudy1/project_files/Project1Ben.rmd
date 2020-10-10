@@ -32,7 +32,6 @@ breweryDat <- read.csv("breweries.csv")
 #head(breweryDat)
 #read in beer data
 beerDat <- read.csv("beerDat.csv")
-
 #Loop to fix leading decimal places on ABV
 i <- 1
 count <- length(beerDat$Name)
@@ -44,7 +43,6 @@ for (i in 1:count) {
     beerDat[i,3] <- beerDat[i,3]*100
   }
 }
-
 #Ensure structure of data is compliant 
 #head(beerDat)
 ########################################################
@@ -198,11 +196,11 @@ for (i in 1:iterations) {
 }
 for (i in 1:iterations) {
   if((buzzbrews[i,9])==''){
-    print(buzzbrews[i,9])
+    #print(buzzbrews[i,9])
     buzzbrews[i,9]="none"
   }
 }
-View(buzzbrews)
+
 #Prep new df to contain style and averages
 #Create a data frame with each style and a variable for average IBU
 styleCount <- as.data.frame(levels(buzzbrews$Style))
@@ -219,7 +217,7 @@ styleCount$totalABV <- 0
 #Checking
 #View(styleCount)
 styleCount <- styleCount[-c(1), ]
-View(styleCount)
+#View(styleCount)
 #Calculate mean IBU for each category and store it in IBU df
 #Calculate average IBU for each style and add it to df
 #outer loop for all the beers
@@ -265,8 +263,8 @@ for (i in 1:iterations) {
     }
   }
 }
-View(styleCount)
-View(buzzbrews)
+#View(styleCount)
+#View(buzzbrews)
 #Now do it all again for ABV
 #Calculate average ABV for each style and add it to df
 #outer loop for all the beers
@@ -314,9 +312,17 @@ for (i in 1:iterations) {
       }
   }
 }
+#kill NaN's for other alcohol types with no hops
+
+i <- 1
+for(i in 1:iterations){
+  if(is.na(buzzbrews[i,8])){
+    buzzbrews[i,8] <- 0
+  }
+}
+
+#Check out end results
 View(buzzbrews)
-
-
 ```
 
 ```{r}
@@ -325,9 +331,77 @@ View(buzzbrews)
 #     Question 4     #
 #                    #
 ######################
-#############################################################################################################
+#################################################################################################################
 #Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare
-#############################################################################################################
+#################################################################################################################
+#Create new DF for this question
+q4DF <- buzzbrews
+
+
+#Group by state and compute median ABV
+medABVstate <- q4DF %>% group_by(State) %>% summarise(median=median(ABV),n=n())
+
+#testing
+#medABVstate
+
+#Group by state and compute median ABV
+medIBUstate <- q4DF %>% group_by(State) %>% summarise(median=median(IBU),n=n())
+
+#testing
+medIBUstate
+
+#Combine dfs into one
+combineddf <- left_join(medABVstate,medIBUstate,by="State")
+
+#change to DF
+combineddf <- as.data.frame(combineddf)
+
+#Remove duplicate count column
+combineddf <- combineddf[,-c(3)]
+
+#Change column names using a really inefficient method
+names(combineddf)[1] <- "State"
+names(combineddf)[2] <- "Median ABV"
+names(combineddf)[3] <- "Median IBU"
+names(combineddf)[4] <- "State Beer Count"
+
+#testing
+combineddf
+
+#Create bar plot for ABV
+#Sort ABV
+sortedABV <- combineddf[order(combineddf$`Median ABV`), ] 
+#This line is to retain sort in plot
+sortedABV$State <- factor(sortedABV$State, levels = sortedABV$State)
+
+theme_set(theme_minimal())
+
+# Draw plot
+ggplot(sortedABV, aes(x=State, y=`Median ABV`)) + 
+  geom_bar(stat="identity", width=.5, fill="deepskyblue3") + 
+  labs(title="Ordered Bar Chart of ABV", 
+       subtitle="State Vs Median ABV", 
+       caption="source: ABV") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+#Create bar plot for IBU
+#Sort IBU
+sortedIBU <- combineddf[order(combineddf$`Median IBU`), ] 
+#This line is to retain sort in plot
+sortedIBU$State <- factor(sortedIBU$State, levels = sortedIBU$State)
+
+theme_set(theme_minimal())
+
+# Draw plot
+ggplot(sortedIBU, aes(x=State, y=`Median IBU`)) + 
+  geom_bar(stat="identity", width=.5, fill="darkolivegreen") + 
+  labs(title="Ordered Bar Chart of IBU", 
+       subtitle="State Vs Median IBU", 
+       caption="source: IBU") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+
+
 ```
 
 ```{r}
@@ -339,6 +413,16 @@ View(buzzbrews)
 #############################################################################################################
 #Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
 #############################################################################################################
+
+#Figure out which has highest ABV
+maxABV <- arrange(buzzbrews, desc(ABV))
+print(maxABV[1,4])
+
+#Figure out which has highest IBU
+maxIBU <- arrange(buzzbrews,desc(IBU))
+print(maxIBU[1,4])
+
+#Colorado wins for ABV, Oregon for IBU
 ```
 
 
@@ -351,6 +435,8 @@ View(buzzbrews)
 #############################################################################################################
 #Comment on the summary statistics and distribution of the ABV variable.
 #############################################################################################################
+hist(buzzbrews$ABV)
+summary(buzzbrews$ABV)
 ```
 
 ```{r}
@@ -388,5 +474,3 @@ View(buzzbrews)
 #Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
 #############################################################################################################
 ```
-
-
