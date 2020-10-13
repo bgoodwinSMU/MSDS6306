@@ -102,7 +102,7 @@ statepop[49,5] <- 1
 statepop[50,5] <- 20
 #Check data 
 #View(statepop)
-#View(brewByState)
+View(brewByState)
 #########################################################
 #########################################################
 #Call plot functions to plot state brewery count on USmap
@@ -344,7 +344,7 @@ medABVstate <- q4DF %>% group_by(State) %>% summarise(median=median(ABV),n=n())
 #testing
 #medABVstate
 
-#Group by state and compute median ABV
+#Group by state and compute median IBU
 medIBUstate <- q4DF %>% group_by(State) %>% summarise(median=median(IBU),n=n())
 
 #testing
@@ -384,6 +384,10 @@ ggplot(sortedABV, aes(x=State, y=`Median ABV`)) +
        caption="source: ABV") + 
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
 
+
+
+
+
 #Create bar plot for IBU
 #Sort IBU
 sortedIBU <- combineddf[order(combineddf$`Median IBU`), ] 
@@ -391,6 +395,8 @@ sortedIBU <- combineddf[order(combineddf$`Median IBU`), ]
 sortedIBU$State <- factor(sortedIBU$State, levels = sortedIBU$State)
 
 theme_set(theme_minimal())
+
+
 
 # Draw plot
 ggplot(sortedIBU, aes(x=State, y=`Median IBU`)) + 
@@ -400,7 +406,12 @@ ggplot(sortedIBU, aes(x=State, y=`Median IBU`)) +
        caption="source: IBU") + 
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
 
+sortedIBU$`Median IBU`
+sortedABV$`Median ABV`
 
+
+mean(combineddf$`Median ABV`)
+mean(combineddf$`Median IBU`)
 
 ```
 
@@ -416,6 +427,7 @@ ggplot(sortedIBU, aes(x=State, y=`Median IBU`)) +
 
 #Figure out which has highest ABV
 maxABV <- arrange(buzzbrews, desc(ABV))
+View(maxIBU)
 print(maxABV[1,4])
 
 #Figure out which has highest IBU
@@ -448,6 +460,30 @@ summary(buzzbrews$ABV)
 #############################################################################################################
 #Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 #############################################################################################################
+#Lm for state median IBU and ABV
+lm_fit <- lm(`Median ABV` ~ `Median IBU`, data=combineddf)
+summary(lm_fit)
+
+ggplot(data = combineddf, aes(x = `Median ABV`, y = `Median IBU`)) + 
+  geom_point(color='blue') +
+  geom_smooth(method = "lm", se = FALSE)
+
+
+#Lm for buzzbrews df
+
+ggplot(data = buzzbrews, aes(x = ABV, y = IBU)) + 
+  geom_point(color='blue') +
+  geom_smooth(method = "lm", se = FALSE)
+
+
+lm_fit <- lm(ABV ~ IBU, data=buzzbrews)
+summary(lm_fit)
+
+
+lm_fit2 <- lm(ABV ~ IBU+State, data=buzzbrews)
+
+anova(lm_fit,lm_fit2)
+
 ```
 
 ```{r}
