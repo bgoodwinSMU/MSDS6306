@@ -9,6 +9,8 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+
 ```{r}
 ######################
 #                    #
@@ -70,6 +72,7 @@ for (i in 1:count) {
 ######################
 ########################################################
 #How many breweries are present in each state?
+#
 ########################################################
 #########################################################
 #Use Dplyr to group breweries by state
@@ -175,7 +178,11 @@ brewByState %>% ggplot(aes(y=reorder(State, n), x= n, fill = "#C8102E")) +
        subtitle = "Budweiser Consultation",
        x = "Number of Breweries", y = "State")
 
+
+
 ```
+
+
 
 ```{r}
 ######################
@@ -194,6 +201,8 @@ bzbwTestDf <- buzzbrews
 #Check the results
 #View(buzzbrews)
 ```
+
+
 
 ```{r}
 ######################
@@ -222,9 +231,11 @@ for (i in 1:iterations) {
   }
 }
 #Prep new df to contain style and averages
+buzzbrews$Style <- as.factor(buzzbrews$Style)
 #Create a data frame with each style and a variable for average IBU
 styleCount <- as.data.frame(levels(buzzbrews$Style))
 styleCount$`levels(buzzbrews$Style)` <- as.character(styleCount$`levels(buzzbrews$Style)`)
+#View(styleCount)
 #Initialize mean ibu to zero (to avoid problems with N/As)
 styleCount$meanIbu <- 0
 #Make beer count to keep track of total in each style
@@ -236,7 +247,7 @@ styleCount$ABVbeerCount <- 0
 styleCount$totalABV <- 0
 #Checking
 #View(styleCount)
-styleCount <- styleCount[-c(1), ]
+#styleCount <- styleCount[-c(1), ]
 #View(styleCount)
 #Calculate mean IBU for each category and store it in IBU df
 #Calculate average IBU for each style and add it to df
@@ -246,14 +257,13 @@ beerCount <- 0
 i <- 1
 for (i in 1:iterations) {
   if(is.na(buzzbrews[i,8])) {
-   buzzbrews[i,8]=0
+    buzzbrews[i,8]=0
   }
   
   #inner for each style
   for (j in 1:100) {
-   
+      
     if(buzzbrews[i,9]==styleCount[j,1]){
-     
      #Compute IBU sum
      styleCount[j,4] <- styleCount[j,4]+buzzbrews[i,8]
      
@@ -271,8 +281,7 @@ for (i in 1:iterations) {
     }
     #Mean IBU for each style
     styleCount[j,2] <- styleCount[j,4]/styleCount[j,3]
-    }
-}
+    }}
 #Add average column from style count to buzzbrews df
 for (i in 1:iterations) {
   if(buzzbrews[i,8]==0){
@@ -340,9 +349,10 @@ for(i in 1:iterations){
   }
 }
 #Check out end results
-buzzbrews$State <- trimws(buzzbrews$State)
 View(buzzbrews)
 ```
+
+
 
 ```{r}
 ######################
@@ -402,8 +412,8 @@ theme(axis.text.x = element_text(angle=65, vjust=0.6))
 #remove - sortedIBU$State <- factor(sortedIBU$State, levels = sortedIBU$State)
 
 # Draw plot
-ggplot(combineddf, aes(x=reorder(State,combineddf$`Median IBU` ), y=`Median IBU`)) +   geom_bar(stat="identity", width=.5, fill="#c8102e") + 
-  geom_text(aes(label = combineddf$`Median IBU` ), hjust = "center", vjust= - 0.4, size = 3) +
+ggplot(combineddf, aes(x=reorder(State,`Median IBU` ), y=`Median IBU`)) +   geom_bar(stat="identity", width=.5, fill="#c8102e") + 
+  geom_text(aes(label = sprintf("%0.1f", round(`Median IBU`, digits = 1))), hjust =-0.1, vjust=0.3, size = 3, angle = 90) +
   labs(title="Median IBU by State in the USA", 
        subtitle="Budweiser Consultation", 
        caption="source: IBU. IBU imputed where necessary.",
@@ -526,11 +536,11 @@ hIBU %>%
 #Original Code: hist(buzzbrews$ABV)
 #Original Code: summary(buzzbrews$ABV)
 
-ABVsummary <- summary(buzzbrews$ABV)
-ABVSumNames <- names(ABVsummary)
-ABVsummary <- unname(ABVsummary)
-ABVsum <- as.data.frame(ABVsummary, ABVSumNames)
-ABVsum <- rename(ABVsum, "Summary"="", "Value"="ABVsummary")
+#ABVsummary <- summary(buzzbrews$ABV)
+#ABVSumNames <- names(ABVsummary)
+#ABVsummary <- unname(ABVsummary)
+#ABVsum <- as.data.frame(ABVsummary, ABVSumNames)
+#ABVsum <- rename(ABVsum, "Summary"="", "Value"="ABVsummary")
 
 ### Boxplot of ABV in general with imputed values ###
 buzzbrews %>%  
@@ -599,6 +609,58 @@ buzzbrews %>%
 #############################################################################################################
 #In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.
 #############################################################################################################
+
+
+#Label Ales, IPAs and neither
+buzzbrews$IPAAle = case_when(grepl("\\bIPA\\b", buzzbrews$Style, ignore.case = TRUE) ~ "IPA",
+                             grepl("\\bIndiana Pale Ale\\b", buzzbrews$Style, ignore.case = TRUE) ~ "IPA",
+                             grepl("\\bAle\\b", buzzbrews$Style, ignore.case = TRUE ) ~ "Ale",
+                            TRUE ~ "neither")
+view(buzzbrews)
+
+#kNN
+iterations = 100
+numks = 30
+
+masterAcc = matrix(nrow = iterations, ncol = numks)
+  
+for(j in 1:iterations)
+{
+accs = data.frame(accuracy = numeric(30), k = numeric(30))
+trainIndices = sample(1:dim(buzzbrews)[1],round(splitPerc * dim(buzzbrews)[1]))
+train = buzzbrews[trainIndices,]
+test = buzzbrews[-trainIndices,]
+for(i in 1:numks)
+  {
+  classifications = knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = i)
+  table(classifications,test$IPAAle)
+  CM = confusionMatrix(table(classifications,test$IPAAle))
+  masterAcc[j,i] = CM$overall[1]
+  }
+}
+
+MeanAcc = colMeans(masterAcc)
+
+plot(seq(1,numks,1),MeanAcc, type = "l")
+
+#Best value of k = 3
+classifications = knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = 3)
+  table(classifications,test$IPAAle)
+  CM = confusionMatrix(table(classifications,test$IPAAle))
+CM
+
+#k = sqrt(dim(buzzbrews)[1])
+classifications = knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = sqrt(dim(buzzbrews)[1]))
+  table(classifications,test$IPAAle)
+  CM = confusionMatrix(table(classifications,test$IPAAle))
+CM
+
+classifyMyBeers <- data.frame(ABV = c(6,6,5,4,5), 
+       IBU = c(78, 65, 55, 38, 100))
+classifications = knn(train[,c(7,8)],classifyMyBeers,train$IPAAle, prob = TRUE, k = 3)
+
+classifications
+
 ```
 
 ```{r}
