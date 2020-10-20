@@ -1,0 +1,52 @@
+Region,Division,State (FIPS),State,Region,Division
+1,1,9,CT,Northeast Region,New England Division
+1,1,23,ME,Northeast Region,New England Division
+1,1,25,MA,Northeast Region,New England Division
+1,1,33,NH,Northeast Region,New England Division
+1,1,44,RI,Northeast Region,New England Division
+1,1,50,VT,Northeast Region,New England Division
+1,2,34,NJ,Northeast Region,Middle Atlantic Division
+1,2,36,NY,Northeast Region,Middle Atlantic Division
+1,2,42,PA,Northeast Region,Middle Atlantic Division
+2,3,17,IL,Midwest Region,East North Central Division
+2,3,18,IN,Midwest Region,East North Central Division
+2,3,26,MI,Midwest Region,East North Central Division
+2,3,39,OH,Midwest Region,East North Central Division
+2,3,55,WI,Midwest Region,East North Central Division
+2,4,19,IA,Midwest Region,West North Central Division
+2,4,20,KS,Midwest Region,West North Central Division
+2,4,27,MN,Midwest Region,West North Central Division
+2,4,29,MO,Midwest Region,West North Central Division
+2,4,31,NE,Midwest Region,West North Central Division
+2,4,38,ND,Midwest Region,West North Central Division
+2,4,46,SD,Midwest Region,West North Central Division
+3,5,10,DE,South Region,South Atlantic Division
+3,5,11,DC,South Region,South Atlantic Division
+3,5,12,FL,South Region,South Atlantic Division
+3,5,13,GA,South Region,South Atlantic Division
+3,5,24,MD,South Region,South Atlantic Division
+3,5,37,NC,South Region,South Atlantic Division
+3,5,45,SC,South Region,South Atlantic Division
+3,5,51,VA,South Region,South Atlantic Division
+3,5,54,WV,South Region,South Atlantic Division
+3,6,1,AL,South Region,East South Central Division
+3,6,21,KY,South Region,East South Central Division
+3,6,28,MS,South Region,East South Central Division
+3,6,47,TN,South Region,East South Central Division
+3,7,5,AR,South Region,West South Central Division
+3,7,22,LA,South Region,West South Central Division
+3,7,40,OK,South Region,West South Central Division
+3,7,48,TX,South Region,West South Central Division
+4,8,4,AZ,West Region,Mountain Division
+4,8,8,CO,West Region,Mountain Division
+4,8,16,ID,West Region,Mountain Division
+4,8,30,MT,West Region,Mountain Division
+4,8,32,NV,West Region,Mountain Division
+4,8,35,NM,West Region,Mountain Division
+4,8,49,UT,West Region,Mountain Division
+4,8,56,WY,West Region,Mountain Division
+4,9,2,AK,West Region,Pacific Division
+4,9,6,CA,West Region,Pacific Division
+4,9,15,HI,West Region,Pacific Division
+4,9,41,OR,West Region,Pacific Division
+4,9,53,WA,West Region,Pacific Division
