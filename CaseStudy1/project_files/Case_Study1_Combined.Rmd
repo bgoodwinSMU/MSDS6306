@@ -27,7 +27,7 @@ library(readr)
 library(tibble)
 library(tidyverse)
 library(robustbase)
-library(rplyr)
+library(plyr)
 library(class)
 library(caret)
 library(e1071)
@@ -40,12 +40,15 @@ library(dplyr)
 ######################
 ########################################################
 #read in brewery data
-setwd("C:/Users/justi/Google Drive/_SMU/6306 Doing Data Science/Case Study 01/MSDS6306/CaseStudy1/CaseStudy1/project_files/") breweryDat <- read.csv("breweries.csv")
+setwd("C:/Users/justi/Documents/GitHub/MSDS6306/CaseStudy1/project_files/") 
+breweryDat <- read.csv("breweries.csv")
+breweryDat$State <- trimws(breweryDat$State)
 
 #datafile to organize states into census regions
 regionData <- read.csv("state-geocodes-v2017.csv")
 regionData <- regionData[,c(-1,-2)]
-regionData <- rename(regionData, "State_FIPS"="State..FIPS.", "Region" = "Region.1", "Division" = "Division.1")
+regionData <- dplyr::rename(regionData, "FIPS"="State..FIPS.", "Region" = "Region.1", "Division" = "Division.1")
+regionData$State <- trimws(regionData$State)
 #Ensure structure of data is compliant 
 #head(breweryDat)
 #read in beer data
@@ -358,6 +361,8 @@ for(i in 1:iterations){
   }
 }
 #Check out end results
+buzzbrews <- merge(buzzbrews, regionData, by = "State")
+
 View(buzzbrews)
 ```
 
@@ -381,17 +386,20 @@ medABVstate$State <- trimws(medABVstate$State)
 #testing
 #medABVstate
 #Group by state and compute median ABV
-medIBUstate <- q4DF %>% group_by(State) %>% dplyr::summarise(IBU = median(IBU),n=n())
+medIBUstate <- q4DF %>% 
+  group_by(State) %>% 
+  dplyr::summarise(IBU = median(IBU),n=n())
 medIBUstate$State <- trimws(medIBUstate$State)
 #testing
-medIBUstate
+#medIBUstate
+
 #Combine dfs into one
 combineddf <- merge(medABVstate,medIBUstate,by="State")
-combineddf
+view(combineddf)
 #change to DF
 combineddf <- as.data.frame(combineddf)
 #Change column names 
-combineddf <- rename(combineddf, "Median ABV" = "ABV", "Median IBU"="IBU", "State Beer Count"="n")
+combineddf <- dplyr::rename(combineddf, "Median ABV" = "ABV", "Median IBU"="IBU", "State Beer Count"="n")
 #testing
 names(combineddf)
 head(combineddf)
@@ -403,8 +411,8 @@ head(combineddf)
 
 # Draw plot
 
-ggplot(combineddf, aes(x=reorder(State, combineddf$'Median ABV'), y=`Median ABV`)) +   geom_bar(stat="identity", width=.5, fill="#c8102e") + 
-  geom_text(aes(label = combineddf$`Median ABV`), hjust = "center", vjust= -.4, size = 3) +
+ggplot(combineddf, aes(x=reorder(State, `Median ABV`), y=`Median ABV`)) +   geom_bar(stat="identity", width=.5, fill="#c8102e") + 
+  geom_text(aes(label = `Median ABV`), hjust = "center", vjust= -.4, size = 3) +
   labs(title = "Median ABV by State in the USA", 
        subtitle = "Budweiser Consultation",
        y = "Median Alcoholic Content by Volume of Beer",
@@ -473,22 +481,24 @@ print(maxABV[1,4])
 #Figure out which has highest IBU
 maxIBU <- arrange(buzzbrews,desc(IBU))
 print(maxIBU[1,4])
-#Colorado wins for ABV, Oregon for IBU
-######################################
+
+##### Question 5 Answer #####
+## Colorado has the highest ABV = 12.8, Oregon has the highest IBU = 138.
+###################################################
 ###### Create DF for just the max ABV values ######
 hABV <- buzzbrews %>% 
   group_by(State) %>% 
-  count(MaxABV = max(ABV), sort = TRUE)
+  dplyr::count(MaxABV = max(ABV), sort = TRUE)
 hABV <- hABV[,-3]
 hABV <- as.data.frame(hABV)
 hABV$State <- trimws(hABV$State)
 hABV$MaxABV <- as.numeric(hABV$MaxABV)
 hABV <- hABV[order(-hABV$MaxABV),]
 str(hABV)
-hABV
+view(hABV)
 
-###### Plot for Max ABV ######
-
+###################################################
+###### Plot for Max ABV ###########################
 hABV %>% 
   ggplot(aes(x=reorder(State, MaxABV), y= MaxABV)) + 
   geom_col(show.legend = FALSE, fill = "#c8102E", position = position_dodge(width = 1), na.rm = TRUE) + 
@@ -502,20 +512,20 @@ hABV %>%
        caption="ABV imputed where necessary.") +
   theme_classic()
 
-
-
-
+###################################################
 ###### Create DF for just the max IBU values ######
 hIBU <- buzzbrews %>% 
   group_by(State) %>%
-  count(MaxIBU = max(IBU), sort = TRUE)
+  dplyr::count(MaxIBU = max(IBU), sort = TRUE)
 hIBU <- as.data.frame(hIBU)
 hIBU <- hIBU[order(-hIBU$MaxIBU),]
 str(hIBU)
 hIBU <- hIBU[,-3]
+hIBU$MaxIBU <- round(hIBU$MaxIBU, digits = 2)
 hIBU
 
-##### Chart Max IBU #####
+###################################################
+############### Chart Max IBU #####################
 
 hIBU %>% 
   ggplot(aes(x=reorder(State, MaxIBU), y= MaxIBU)) + 
@@ -542,38 +552,31 @@ hIBU %>%
 #############################################################################################################
 #Comment on the summary statistics and distribution of the ABV variable.
 #############################################################################################################
-#Original Code: hist(buzzbrews$ABV)
-#Original Code: summary(buzzbrews$ABV)
+# Check on the distribution of ABV
+hist(buzzbrews$ABV, col = "#c8102e",
+     main = "Histogram of ABV Distribution",
+     sub = "Busweiser Consultation",
+     xlab = "ABV Ratings")
+densityABV <- density(buzzbrews$ABV)
+plot(densityABV, 
+     main = "Kernel Density of Alcohol By Volume", 
+     sub = "Budweiser Consultation",
+     xlab = "ABV Ratings")
+polygon(densityABV, col = "#c8102e")
 
-#ABVsummary <- summary(buzzbrews$ABV)
+
+ABVsummary <- summary(buzzbrews$ABV)
+ABVsummary
+
+############### Not sure what we want to do down here ##################
 #ABVSumNames <- names(ABVsummary)
-#ABVsummary <- unname(ABVsummary)
-#ABVsum <- as.data.frame(ABVsummary, ABVSumNames)
+#ABVSumNames <- as.factor(ABVSumNames)
+#ABVsummary <- as.list(unname(ABVsummary))
+#ABVsum <- data.frame(ABVsummary)
+#ABVsum <- (ABVSumNames)
+#as.data.frame(ABVsum)
 #ABVsum <- rename(ABVsum, "Summary"="", "Value"="ABVsummary")
-
-### Boxplot of ABV in general with imputed values ###
-buzzbrews %>%  
-  ggplot(aes(y=ABV, fill = "#C8102E")) + 
-  geom_boxplot(show.legend = FALSE, ) + 
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Boxplot of ABV in Beer in the USA", 
-       subtitle = "Budweiser Consultation",
-       x = "Combined States and Beers",
-       caption = "Note: Missing ABV and IBU values imputed.")
-
-### Boxplot of ABV by Style with imputed values ###
-buzzbrews %>%  
-  ggplot(aes(y=ABV, x = reorder(Style, Style), color = "#c8102E")) + 
-  geom_boxplot(show.legend = FALSE, ) + 
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) +
-  labs(title = "Boxplots of ABV in Beer by Style in the USA", 
-       subtitle = "Budweiser Consultation",
-       y = "ABV Values",
-       x = "Styles of Beer from the Sample",
-       caption="ABV imputed where necessary.")
-
+########################################################################
 
 ```
 
@@ -627,7 +630,7 @@ buzzbrews$IPAAle = case_when(grepl("\\bIPA\\b", buzzbrews$Style, ignore.case = T
                             TRUE ~ "neither")
 view(buzzbrews)
 
-#kNN
+##### Find the best value of K and train the model ##############
 iterations = 100
 numks = 30
 splitPerc = .70
@@ -654,24 +657,41 @@ MeanAcc = colMeans(masterAcc)
 
 plot(seq(1,numks,1),MeanAcc, type = "l")
 
-#Best value of k = 3
+####### Best value of k = 3 ##############################
+####### Train the model using k = 3 #####################
+for(i in 1:iterations)
+  {
+  knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = 3)
+  }
+
 classifications = knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = 3)
   table(classifications,test$IPAAle)
   CM = confusionMatrix(table(classifications,test$IPAAle))
 CM
 
-#k = sqrt(dim(buzzbrews)[1])
+############ Testing to see if we can get a better result than the k predictor ##########
+#k = sqrt(dim(buzzbrews)[1]) 
 classifications = knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = sqrt(dim(buzzbrews)[1]))
   table(classifications,test$IPAAle)
   CM = confusionMatrix(table(classifications,test$IPAAle))
 CM
+############ K=3 vs K=SQRT(n) Results ########################
+# Test results are about the same between using the SQRT of the total number of 
+# beers observed and our measured best result for K
 
+####### Test the Classifier with some random data ###
 classifyMyBeers <- data.frame(ABV = c(6,6,5,4,5), 
        IBU = c(78, 65, 55, 38, 100))
 classifications = knn(train[,c(7,8)],classifyMyBeers,train$IPAAle, prob = TRUE, k = 3)
 
 classifications
+############ Test Results #######################
+#Classification:  IPA       IPA       neither   Ale       IPA    
+#Probability:     0.6666667 1.0000000 0.3333333 0.3333333 1.0000000
+##################################################
 
+
+############# Summary data by classification #############
 IPAAleSummary <- buzzbrews %>% 
   group_by(IPAAle) %>% 
   dplyr::summarise(ABV.min = min(ABV), 
@@ -684,14 +704,19 @@ IPAAleSummary
 
 ###############################################
 # Based on the output of the knn classifier using 30% of the data as a training set and 70% of the data 
-# as a test set, we # find that the best value of the nearest neighbor is 3, more than likely as a result 
-# of a lot of beers having very similar IBU and ABV scores. We were able to accurately classify IPA, Ale 
-# and neither on average 70% of the time, so there is definitely a relationship between a beers IBU and ABV 
-# rating and the type of beer it is. We were able to classify IPAs correctly 86% of the time and Ale's 60% of the time (and neither 68% of the time.)
+# as a test set, we find that the best number of nearest neighbors is 3 (less noise in the model), more 
+# than likely as a result of a lot of beers having very similar IBU and ABV scores. We were able to 
+# accurately classify IPA, Ale and neither on average 70% of the time, so there is definitely a 
+# relationship between a beers IBU and ABV rating and the type of beer it is. We were able to classify 
+# IPAs correctly 86% of the time and Ale's 60% of the time (and neither 68% of the time.)
 
-# We also look a look at the ranges for IBU and ABV for each of the 3 broad types of beerL IPA, Ale and neither
-# and found
-
+# We also look a look at the ranges for IBU and ABV for each of the 3 broad types of beers IPA, Ale or "neither"
+# and found the following results, showing that it should be more difficult to predict an from a beer that is
+# neither an IPA or an Ale
+# IPAAle  ABV.min ABV.med ABV.max IBU.min IBU.med IBU.max
+# Ale         3.5    5.5      9.9       0    29.9     115
+# IPA         2.7    6.8      9.9      30    67.6     138
+# neither     0.1    5.33    12.8       0    23.4     100
 
 ```
 
