@@ -12,7 +12,15 @@ knitr::opts_chunk$set(echo = TRUE)
 # Introduction #########
 #
 #
-# The following is an analysis of one-hundred styles of beer brewed in the United States for the executive team, CEO and CFO at Budweiser. Budweiser is interested in exploring the how many breweries are in the United States, how each beer is reported in terms of its International Bitterness Unit and Alcohol By Content and basic summary statistics and conclusions we are able to uncover with the beer data provided. Statistics will include handling missing data and explaining why it was possibly not included in the initial dataset, as well as uncover median and maximum (IBU and ABV) ratings by state. Conclusions will include basic summary statics on the ABV variable, any relationship between the IBU and ABV variables (such as dependencies, e.g. does a higher IBU result in a higher ABV) and finally we will look to see if we can determine general beer styles (Ales and IPAs) based on ABV and IBU values. Additionally, we will report on any findings that are discovered during the analysis.
+# The following is an analysis of one-hundred styles of beer brewed in the United States for the executive team,
+# CEO and CFO at Budweiser. Budweiser is interested in exploring the how many breweries are in the United States, 
+# how each beer is reported in terms of its International Bitterness Unit and Alcohol By Content and basic summary
+# statistics and conclusions we are able to uncover with the beer data provided. Statistics will include handling
+# missing data and explaining why it was possibly not included in the initial dataset, as well as uncover median 
+# and maximum (IBU and ABV) ratings by state. Conclusions will include basic summary statics on the ABV variable, 
+# any relationship between the IBU and ABV variables (such as dependencies, e.g. does a higher IBU result in a 
+# higher ABV) and finally we will look to see if we can determine general beer styles (Ales and IPAs) based on 
+# ABV and IBU values. Additionally, we will report on any findings that are discovered during the analysis.
 
 
 ```{r}
@@ -76,7 +84,9 @@ for (i in 1:count) {
 ```
 # Question 1 - How many breweries are in each state?
 #
-# During this analysis, we explored how many breweries are in each state and grouped the states by US Census Divisions. The data is visually displayed using maps of each USC Division below and summarized in a simple chart at the end.
+# During this analysis, we explored how many breweries are in each state and grouped the states 
+# by US Census Divisions. The data is visually displayed using maps of each USC Division below 
+# and summarized in a simple chart at the end.
 
 
 ```{r}
@@ -199,7 +209,9 @@ brewByState %>% ggplot(aes(y=reorder(State, n), x= n, fill = "#C8102E")) +
 
 # Question 2 - Merge the individual data sets
 #
-# We merged the breweries.csv dataset with the beers.csv dataset, additionally when we imported the individual datasets, we also imported a dataset that allows us to associate each beer with its brewery's US Census Division.  
+# We merged the breweries.csv dataset with the beers.csv dataset, additionally when we imported
+# the individual datasets, we also imported a dataset that allows us to associate each beer with 
+# its brewery's US Census Division.  
 
 ```{r}
 ######################
@@ -221,11 +233,27 @@ bzbwTestDf <- buzzbrews
 
 # Question 3 - Address the missing values in each column.
 #
-# During the initial exploratory process we discovered NA's in both the IBU and ABV columns. Upon further investigation we determined that some styles of beer, mixed or barrel aged beers do not have an ABV available at the time the brewery submits packaging labels to TTB, or Alcohol and Tobacco Tax and Trade Bureau. The TTB is the federal agency that determines what can and cannot be put on a beer label including the art, type size, verbiage, where elements are placed and etc. So beers without an AVB available either do not inlcude it, or add it to the bottom of the cans or packaging at a later date. 
+# During the initial exploratory process we discovered NA's in both the IBU and ABV columns. 
+# Upon further investigation we determined that some styles of beer, mixed or barrel aged beers
+# do not have an ABV available at the time the brewery submits packaging labels to TTB, or Alcohol
+# and Tobacco Tax and Trade Bureau. The TTB is the federal agency that determines what can and cannot
+# be put on a beer label including the art, type size, verbiage, where elements are placed and etc.
+# So beers without an AVB available either do not inlcude it, or add it to the bottom of the cans 
+# or packaging at a later date. 
 
-# In terms of the missing IBU values, we determined that even though the IBU alludes to the bitterness of a beer's taste, it is somewhat misleading because it is derived from a test that measures different chemical compounds that are known to cause bitter flavoring. For instance, a beer may have a high IBU value, but due to other ingredients, such as added lactose or sucrose may actually have a sweeter taste than would be expected from a high IBU. The other comfounding variable is if the brewery can afford the equipment used to generate an IBU value, smaller breweries simply cannot afford it while the larger breweries typically just use IBU as a quality control measure.
+# In terms of the missing IBU values, we determined that even though the IBU alludes to the bitterness
+# of a beer's taste, it is somewhat misleading because it is derived from a test that measures different
+# chemical compounds that are known to cause bitter flavoring. For instance, a beer may have a high IBU 
+# value, but due to other ingredients, such as added lactose or sucrose may actually have a sweeter taste 
+# than would be expected from a high IBU. The other comfounding variable is if the brewery can afford the 
+# equipment used to generate an IBU value, smaller breweries simply cannot afford it while the larger 
+# breweries typically just use IBU as a quality control measure.
 
-# Finally, we concluded that imputing data or filling in the missing gaps was a good idea for this analysis and that was done by taking an average of from similiar styles of beer and assigning that to beers in the same sytle classification that did not have values. Upon random testing of different imputed values, by googling beers that had missing values in the dataset and comparing that to the created averages, it was determined that the imputed values were very close to the actual values in the marketplace.
+# Finally, we concluded that imputing data or filling in the missing gaps was a good idea for this
+# analysis and that was done by taking an average of from similiar styles of beer and assigning that to
+# beers in the same sytle classification that did not have values. Upon random testing of different imputed
+# values, by googling beers that had missing values in the dataset and comparing that to the created averages,
+# it was determined that the imputed values were very close to the actual values in the marketplace.
 
 ```{r}
 ######################
@@ -377,10 +405,16 @@ buzzbrews <- merge(buzzbrews, regionData, by = "State")
 View(buzzbrews)
 ```
 
-# Question 4 - Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
+# Question 4 - Compute the median alcohol content and international bitterness unit for 
+# each state. Plot a bar chart to compare.
 #
-# We computed the median ABV and IBU for each state and created a visualisation that allowed us to further explore what those medians tell us. We found there appears to be a relationship between IBU and ABV where we can use IBU to estimate ABV of a given beer. 
-# We explored this further by developing a model to make predictions based on historical IBU and ABV data and were able to predict that a beer with 32 IBU could have an ABV of 5.72% and we were 97.5% confident that beer would at least fall between 3.24% and 8.21%.
+# We computed the median ABV and IBU for each state and created a visualisation that allowed
+# us to further explore what those medians tell us. We found there appears to be a relationship
+# between IBU and ABV where we can use IBU to estimate ABV of a given beer. 
+#
+# We explored this further by developing a model to make predictions based on historical IBU
+# and ABV data and were able to predict that a beer with 32 IBU could have an ABV of 5.72% and
+# we were 97.5% confident that beer would at least fall between 3.24% and 8.21%.
 
 
 ```{r}
@@ -483,8 +517,11 @@ ggplot(combineddf,aes(x = `Median ABV`, y = `Median IBU`, color = State)) +
 
 # Question 5 - Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
 #
-# We determined that the maximum observed IBU was 138 in Oregon for Bitter Bitch Imperial IPA that is an American Double/ Imperial IPA from the Astoria Brewing Company in Austoria, OR. 
-# We also determined that maximum observed ABV was 12.8% in Colorado for Lee Hill Series Vol. 5 – Belgian Style Quadrupel Ale from Upslope Brewing Company in Boulder, CO.
+# We determined that the maximum observed IBU was 138 in Oregon for Bitter Bitch Imperial IPA that 
+# is an American Double/ Imperial IPA from the Astoria Brewing Company in Austoria, OR. 
+# 
+# We also determined that maximum observed ABV was 12.8% in Colorado for Lee Hill Series Vol. 5 – 
+# Belgian Style Quadrupel Ale from Upslope Brewing Company in Boulder, CO.
 
 
 
@@ -566,8 +603,14 @@ hIBU %>%
 
 # Question 6 - Comment on the summary statistics and distribution of the ABV variable.
 #
-# We observed summary statistics from the ABV data showing that once we filled in the missing values as best as we could, there was a range of 0.10% to 12.80% with a median of 5.65% (median is simply the middle value if we were to arrange all the ABVs in either decending or ascending order). 
-# We also found a very common range within the overall range that went from 5.0% ABV to 6.70% ABV and upon further review noticed this is where many commonly mass produced beers fall, for example: Bud Ice (5.5%), Bud Light Platinum (6%), Natural Ice (5.9%), Bud Ice (5.5%), Budweiser (5%), Blue Moon (5%), Stella Artois (5%), Heinekin (5%), Pabst Blue Ribbon (4.74%) and Miller Genuinine Draft (4.6%).
+# We observed summary statistics from the ABV data showing that once we filled in the missing 
+# values as best as we could, there was a range of 0.10% to 12.80% with a median of 5.65% (median
+# is simply the middle value if we were to arrange all the ABVs in either decending or ascending order).
+#
+# We also found a very common range within the overall range that went from 5.0% ABV to 6.70% ABV and 
+# upon further review noticed this is where many commonly mass produced beers fall, for example: Bud 
+# Ice (5.5%), Bud Light Platinum (6%), Natural Ice (5.9%), Bud Ice (5.5%), Budweiser (5%), Blue Moon 
+# (5%), Stella Artois (5%), Heinekin (5%), Pabst Blue Ribbon (4.74%) and Miller Genuinine Draft (4.6%).
 
 
 ```{r}
@@ -607,9 +650,14 @@ ABVsummary
 
 ```
 
-# Question 7 - Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+# Question 7 - Is there an apparent relationship between the bitterness of the beer and its 
+# alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and 
+# EXPLAIN your answer.
 #
-# We used a scatter plot to viusally explore if there is any sort of relationship between IBU and ABV, in other words can IBU determine ABV or can ABV be used to determine IBU. There was evidence of a positive relationship, but and we will discuss this further shortly, it appears one can potentially predict the other.
+# We used a scatter plot to viusally explore if there is any sort of relationship between 
+# IBU and ABV, in other words can IBU determine ABV or can ABV be used to determine IBU. 
+# There was evidence of a positive relationship, but and we will discuss this further shortly, 
+# it appears one can potentially predict the other.
 
 
 ```{r}
@@ -643,13 +691,30 @@ buzzbrews %>%
 ```
 
 
-#Question 8 - .  Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
-#In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.  
+#Question 8 - .  Budweiser would also like to investigate the difference with respect to IBU and ABV 
+# between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).
+# You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one
+# way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy 
+# to understand conceptually.
+#In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may
+# also feel free to supplement your response to this question with any other methods or techniques you have
+# learned.  Creativity and alternative solutions are always encouraged.  
 #
-# We built a kNN (nearest neighbor) classifier to see if there is a difference between IPA and Ale, and while we were at it, we also added in a third class called, "neither." In building the kNN, we wanted to explore what the appropriate number of "neighbors" was to compare to since there is so many observations so close together (think New York city and all the noise generated). We found that generally 8 neighbors were the best estimation (we randomly parsed the data 100 times to find the best neighbors value). 
-# Our classifier was accurate in determining if a beer was an Ale, IPA or neither about 64.5% of the time when we used 8 nearest neighbors.
-# Next we created some random pairings of IBU and ABV to see how the classifier handled the data and discovered it again was about 64.5% accurate. It is far more accurate identifyly neither style of beer 78% of the time, then IPAs 67.5% of the time and Ale's 26% of the time.
-# We also look a look at the ranges for IBU and ABV for each of the 3 broad types of beers IPA, Ale or "neither" and found the following results, showing that it should be more difficult to predict between the 3 different types of beers.
+# We built a kNN (nearest neighbor) classifier to see if there is a difference between IPA and Ale, and while
+# we were at it, we also added in a third class called, "neither." In building the kNN, we wanted to explore 
+# what the appropriate number of "neighbors" was to compare to since there is so many observations so close
+# together (think New York city and all the noise generated). We found that generally 8 neighbors were the 
+# best estimation (we randomly parsed the data 100 times to find the best neighbors value). 
+#
+# Our classifier was accurate in determining if a beer was an Ale, IPA or neither about 64.5% of the time
+# when we used 8 nearest neighbors.
+# Next we created some random pairings of IBU and ABV to see how the classifier handled the data and discovered 
+# it again was about 64.5% accurate. It is far more accurate identifyly neither style of beer 78% of the time, 
+# then IPAs 67.5% of the time and Ale's 26% of the time.
+# We also look a look at the ranges for IBU and ABV for each of the 3 broad types of beers IPA, Ale or 
+# "neither" and found the following results, showing that it should be more difficult to predict between 
+# the 3 different types of beers.
+# 
 # IPAAle  ABV.min ABV.med ABV.max IBU.min IBU.med IBU.max
 # Ale         3.5     5.4    12.8       7    31       120
 # IPA         4       6.7     9.9      19    67.6     138
