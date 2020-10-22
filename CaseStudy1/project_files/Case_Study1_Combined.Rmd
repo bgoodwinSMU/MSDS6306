@@ -9,6 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
 # Introduction #########
 #
 #
@@ -21,9 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # any relationship between the IBU and ABV variables (such as dependencies, e.g. does a higher IBU result in a 
 # higher ABV) and finally we will look to see if we can determine general beer styles (Ales and IPAs) based on 
 # ABV and IBU values. Additionally, we will report on any findings that are discovered during the analysis.
-
-
-```{r}
+#
 ######################
 #                    #
 #     Libraries      #
@@ -44,6 +43,7 @@ library(class)
 library(caret)
 library(e1071)
 library(dplyr)
+library(RColorBrewer)
 ######################
 ######################
 #                    #
@@ -82,23 +82,20 @@ for (i in 1:count) {
 #head(beerDat)
 ########################################################
 ```
+
+```{r}
 # Question 1 - How many breweries are in each state?
 #
 # During this analysis, we explored how many breweries are in each state and grouped the states 
 # by US Census Divisions. The data is visually displayed using maps of each USC Division below 
 # and summarized in a simple chart at the end.
-
-
-```{r}
+#
 ######################
 #                    #
 #     Question 1     #
 #                    #
 ######################
-########################################################
-#How many breweries are present in each state?
 #
-########################################################
 #########################################################
 #Use Dplyr to group breweries by state
 brewByState <- breweryDat %>% group_by(State) %>% count()
@@ -203,15 +200,7 @@ brewByState %>% ggplot(aes(y=reorder(State, n), x= n, fill = "#C8102E")) +
        subtitle = "Budweiser Consultation",
        x = "Number of Breweries", y = "State")
 
-
-
 ```
-
-# Question 2 - Merge the individual data sets
-#
-# We merged the breweries.csv dataset with the beers.csv dataset, additionally when we imported
-# the individual datasets, we also imported a dataset that allows us to associate each beer with 
-# its brewery's US Census Division.  
 
 ```{r}
 ######################
@@ -220,7 +209,12 @@ brewByState %>% ggplot(aes(y=reorder(State, n), x= n, fill = "#C8102E")) +
 #                    #
 ######################
 #############################################################################################################
-#Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
+# Question 2 - Merge the individual data sets
+#
+# We merged the breweries.csv dataset with the beers.csv dataset, additionally when we imported
+# the individual datasets, we also imported a dataset that allows us to associate each beer with 
+# its brewery's US Census Division.  
+#
 #############################################################################################################
 #Use Dplyr package to merge the two tables together
 buzzbrews <- merge(breweryDat, beerDat, by.x = "Brew_ID", by.y = "Brewery_id", all = TRUE )
@@ -231,6 +225,14 @@ bzbwTestDf <- buzzbrews
 #View(buzzbrews)
 ```
 
+```{r}
+
+######################
+#                    #
+#     Question 3     #
+#                    #
+######################
+###########################################
 # Question 3 - Address the missing values in each column.
 #
 # During the initial exploratory process we discovered NA's in both the IBU and ABV columns. 
@@ -240,7 +242,7 @@ bzbwTestDf <- buzzbrews
 # be put on a beer label including the art, type size, verbiage, where elements are placed and etc.
 # So beers without an AVB available either do not inlcude it, or add it to the bottom of the cans 
 # or packaging at a later date. 
-
+#
 # In terms of the missing IBU values, we determined that even though the IBU alludes to the bitterness
 # of a beer's taste, it is somewhat misleading because it is derived from a test that measures different
 # chemical compounds that are known to cause bitter flavoring. For instance, a beer may have a high IBU 
@@ -248,21 +250,13 @@ bzbwTestDf <- buzzbrews
 # than would be expected from a high IBU. The other comfounding variable is if the brewery can afford the 
 # equipment used to generate an IBU value, smaller breweries simply cannot afford it while the larger 
 # breweries typically just use IBU as a quality control measure.
-
+#
 # Finally, we concluded that imputing data or filling in the missing gaps was a good idea for this
 # analysis and that was done by taking an average of from similiar styles of beer and assigning that to
 # beers in the same sytle classification that did not have values. Upon random testing of different imputed
 # values, by googling beers that had missing values in the dataset and comparing that to the created averages,
 # it was determined that the imputed values were very close to the actual values in the marketplace.
-
-```{r}
-######################
-#                    #
-#     Question 3     #
-#                    #
-######################
-###########################################
-#Address the missing values in each column
+#
 ###########################################
 #Loop to fix numbering for Column 1 "brew ID"
 iterations <- length(buzzbrews$Brew_ID)
@@ -343,11 +337,11 @@ for (i in 1:iterations) {
     }
   }
 }
-#View(styleCount)
-#View(buzzbrews)
-#Now do it all again for ABV
-#Calculate average ABV for each style and add it to df
-#outer loop for all the beers
+# View(styleCount)
+# View(buzzbrews)
+# Now do it all again for ABV
+# Calculate average ABV for each style and add it to df
+# outer loop for all the beers
 AlcSum <- 0
 AlcVeerCount <- 0
 i <- 1
@@ -405,17 +399,6 @@ buzzbrews <- merge(buzzbrews, regionData, by = "State")
 View(buzzbrews)
 ```
 
-# Question 4 - Compute the median alcohol content and international bitterness unit for 
-# each state. Plot a bar chart to compare.
-#
-# We computed the median ABV and IBU for each state and created a visualisation that allowed
-# us to further explore what those medians tell us. We found there appears to be a relationship
-# between IBU and ABV where we can use IBU to estimate ABV of a given beer. 
-#
-# We explored this further by developing a model to make predictions based on historical IBU
-# and ABV data and were able to predict that a beer with 32 IBU could have an ABV of 5.72% and
-# we were 97.5% confident that beer would at least fall between 3.24% and 8.21%.
-
 
 ```{r}
 ######################
@@ -424,105 +407,135 @@ View(buzzbrews)
 #                    #
 ######################
 #################################################################################################################
-#Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare
+# Question 4 - Compute the median alcohol content and international bitterness unit for 
+# each state. Plot a bar chart to compare.
+#
+# We computed the MedStateABV and IBU for each state and created a visualisation that allowed
+# us to further explore what those medians tell us. We found there appears to be a relationship
+# between IBU and ABV where we can use IBU to estimate ABV of a given beer. 
+#
+# We explored this further by developing a model to make predictions based on historical IBU
+# and ABV data and were able to predict that a beer with 32 IBU could have an ABV of 5.72% and
+# we were 97.5% confident that beer would at least fall between 3.24% and 8.21%.
+#
 #################################################################################################################
-#Create new DF for this question
-q4DF <- buzzbrews
-q4DF$State <- trimws(q4DF$State)
-#Group by state and compute median ABV
-medABVstate <- q4DF %>% group_by(State) %>% summarise_at("ABV",median)
-medABVstate$State <- trimws(medABVstate$State)
-#testing
-#medABVstate
-#Group by state and compute median ABV
-medIBUstate <- q4DF %>% 
-  group_by(State) %>% 
-  dplyr::summarise(IBU = median(IBU),n=n())
-medIBUstate$State <- trimws(medIBUstate$State)
-#testing
-#medIBUstate
+buzzbrews$State <- trimws(buzzbrews$State)
 
-#Combine dfs into one
-combineddf <- merge(medABVstate,medIBUstate,by="State")
-view(combineddf)
-#change to DF
+# Group by state and compute 
+combineddf <- buzzbrews %>%
+  group_by(State) %>%
+  dplyr::summarise(MedStateIBU = median(IBU), MedStateABV = median(ABV))
+
 combineddf <- as.data.frame(combineddf)
-#Change column names 
-combineddf <- dplyr::rename(combineddf, "Median ABV" = "ABV", "Median IBU"="IBU", "State Beer Count"="n")
-#testing
-names(combineddf)
-head(combineddf)
-#Create bar plot for ABV
-#Sort ABV
-#remove = sortedABV <- combineddf[order(combineddf$`Median ABV`), ] 
-#This line is to retain sort in plot
-#remove - sortedABV$State <- factor(sortedABV$State, levels = sortedABV$State)
+combineddf$MedStateIBU <- as.numeric(combineddf$MedStateIBU)
+combineddf$MedStateABV <- as.numeric(combineddf$MedStateABV)
 
-# Draw plot
+# Divisional measurements
+divisiondf <- buzzbrews %>% 
+  group_by(Division) %>% 
+  dplyr::summarise(MedDivIBU = median(IBU), MedDivABV = median(ABV))
 
-ggplot(combineddf, aes(x=reorder(State, `Median ABV`), y=`Median ABV`)) +   geom_bar(stat="identity", width=.5, fill="#c8102e") + 
-  geom_text(aes(label = `Median ABV`), hjust = "center", vjust= -.4, size = 3) +
-  labs(title = "Median ABV by State in the USA", 
-       subtitle = "Budweiser Consultation",
-       y = "Median Alcoholic Content by Volume of Beer",
-       x = "State by ABV Median Score",
-       caption = "ABV imputed where necessary.") + 
-theme_minimal() +
-theme(axis.text.x = element_text(angle=65, vjust=0.6))
+# round values to xx.x ###
+divisiondf$MedDivIBU <- round(divisiondf$MedDivIBU, digits = 1)
+divisiondf$MedDivABV <- round(divisiondf$MedDivABV, digits = 1) 
+combineddf$MedStateIBU <- round(combineddf$MedStateIBU, digits = 1)
+combineddf$MedStateABV <- round(combineddf$MedStateABV, digits = 1)
 
+# Add regions to combinddf
+combineddf <- merge(combineddf,regionData,by="State")
 
+# Add in divisional values
+combineddf <- merge(combineddf, divisiondf, by = "Division")
+
+####### Create chart labels for stacked charts #####
+combineddf$ABVlabel <- paste(combineddf$State, combineddf$MedStateABV)
+combineddf$IBUlabel <- paste(combineddf$State, combineddf$MedStateIBU)
+
+view(combineddf)
+
+# Create sums of medians for labeling charts #
+StateSums <- combineddf %>%
+  group_by(Division) %>%
+  dplyr::summarise(SumStateABV = sum(MedStateABV), SumStateIBU = sum(MedStateIBU))
+
+combineddf <- merge(combineddf, StateSums, by = "Division")
+
+#
+############################################################
+#########                                   ################
+######### Draw Bar Chart = Median State ABV ################
+#########                                   ################
+############################################################
+#
+combineddf %>%
+  ggplot(aes(x=Division, y=MedStateABV,fill= reorder(State,-MedStateABV))) +   
+  # Create stacked by chart organized by Division with States stacked in each bar
+  geom_bar(aes(color = "#c8102e"),stat="identity", width= 0.7, position = position_stack(), show.legend = FALSE) + 
+  # Add Division ABV Values to top of each chart stack
+  geom_text(aes(label = ABVlabel), size = 3, position = position_stack(vjust = 0.5)) + 
+  # Add state and ABV value to each state's chart position
+  geom_text(aes(Division, MedDivABV + SumStateABV - 3, label = MedDivABV), size = 3, vjust = 1, fontface = "italic") +
+  # Label the chart objects
+  labs(title="Median ABV by State by US Census Division in the USA", 
+       subtitle="Budweiser Consultation", 
+       caption="source: ABV. ABV imputed where necessary.",
+       y = "Alcohol By Volume",
+       x = "States by US Census Divisions ") + 
+  theme_classic() +
+  # Adjust the X-axis labels, remove y-labels since this is a stacked chart
+  theme(axis.text.x = element_text(angle=90, vjust = 0.5,hjust = 1), 
+        axis.text.y = element_blank(), axis.ticks = element_blank())
+#
 ##### Create bar plot for IBU #####
-#Sort IBU
-#remove - sortedIBU <- combineddf[order(combineddf$`Median IBU`), ] 
-#This line is to retain sort in plot
-#remove - sortedIBU$State <- factor(sortedIBU$State, levels = sortedIBU$State)
-
-# Draw plot
-ggplot(combineddf, aes(x=reorder(State,`Median IBU` ), y=`Median IBU`)) +   geom_bar(stat="identity", width=.5, fill="#c8102e") + 
-  geom_text(aes(label = sprintf("%0.1f", round(`Median IBU`, digits = 1))), hjust =-0.1, vjust=0.3, size = 3, angle = 90) +
-  labs(title="Median IBU by State in the USA", 
+#
+combineddf %>%
+  ggplot(aes(x=Division, y=MedStateIBU,fill= reorder(State,-MedStateIBU))) +   
+  # Create stacked by chart organized by Division with States stacked in each bar
+  geom_bar(aes(color = "#c8102e"),stat="identity", width= 0.7, position = position_stack(), show.legend = FALSE) + 
+  # Add Division IBU Values to top of each chart stack
+  geom_text(aes(label = IBUlabel), size = 3, position = position_stack(vjust = 0.5)) + 
+  # Add state and IBU value to each state's chart position
+  geom_text(aes(Division, MedDivIBU + SumStateIBU - 15, label = MedDivIBU), size = 3, vjust = 1, fontface = "italic") +
+  # Label the chart objects
+  labs(title="Median IBU by State by US Census Division in the USA", 
        subtitle="Budweiser Consultation", 
        caption="source: IBU. IBU imputed where necessary.",
        y = "Median Int'l Bitterness Unit",
-        x = "State Ordered by Median IBU Score") + 
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+       x = "States by US Census Divisions ") + 
+  theme_classic() +
+  # Adjust the X-axis labels, remove y-labels since this is a stacked chart
+  theme(axis.text.x = element_text(angle=90, vjust = 0.5,hjust = 1), 
+        axis.text.y = element_blank(), axis.ticks = element_blank())
+#
+#
 ####################################################
 ##                                                ##
-## Scatterplot Median IBU vs Median ABV by State  ##
+## Scatterplot MedStateIBU vs MedStateABV by State  ##
 ##                                                ##
 ####################################################
 
 ## Calculate slope and intercept of line of best fit ##
-coef(lm(`Median IBU` ~ `Median ABV`, combineddf))
-#  (Intercept) `Median ABV` 
+abline_values <- coef(lm(MedStateABV ~ MedStateIBU, combineddf))
+#  (Intercept) MedStateABV 
 #   14.5377926    0.4013998 
 
-combineddf$State <- trimws(combineddf$State)
-ovr_med_IBU <- median(combineddf$`Median IBU`)
-
-ovr_med_ABV <- median(combineddf$`Median ABV`)
-
-ggplot(combineddf,aes(x = `Median ABV`, y = `Median IBU`, color = State)) +
+ggplot(combineddf,aes(x = MedStateIBU, y = MedStateABV, color = State)) +
   geom_point(show.legend = FALSE) +
-  geom_abline(intercept = 14.5377926 , slope = 0.4013998 , color = "#c8102E", size = 1)+   geom_text(data = subset(combineddf,`Median IBU` > 40 | `Median ABV` < 4.5, select = c(State, `Median IBU`, `Median ABV`)), aes(label = State), vjust= -0.6, size = 3, na.rm = TRUE, show.legend = FALSE, color = "#000000") +
+  # Add ABLine to the chart to see if there is a linear relationship
+  geom_abline(intercept = abline_values[1] , slope = abline_values[2] , color = "#c8102E", size = 1) +   
+  # Add state labels, but only for outliers
+  geom_text(data = subset(combineddf,MedStateIBU > 45 | MedStateABV < 4.5, 
+                          select = c(State, MedStateIBU, MedStateABV)), 
+            aes(label = State), vjust= -0.6, size = 3, na.rm = TRUE, 
+            show.legend = FALSE, color = "#000000") +
   theme_classic() + 
-  labs(title = "Media ABV vs Median IBU", 
+  labs(title = "Median State ABV vs Median State IBU", 
        subtitle = "Budweiser Consultation",
-       x = "Median Alcoholic By Vol", 
-       y = "Median Int'l Bitterness Unit",
+       y = "Median Alcoholic By Vol", 
+       x = "Median Int'l Bitterness Unit",
        caption = "NOTE: Missing ABV and IBU values imputed")
 
 ```
-
-# Question 5 - Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
-#
-# We determined that the maximum observed IBU was 138 in Oregon for Bitter Bitch Imperial IPA that 
-# is an American Double/ Imperial IPA from the Astoria Brewing Company in Austoria, OR. 
-# 
-# We also determined that maximum observed ABV was 12.8% in Colorado for Lee Hill Series Vol. 5 – 
-# Belgian Style Quadrupel Ale from Upslope Brewing Company in Boulder, CO.
-
 
 
 ```{r}
@@ -532,7 +545,14 @@ ggplot(combineddf,aes(x = `Median ABV`, y = `Median IBU`, color = State)) +
 #                    #
 ######################
 #############################################################################################################
-#Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+# Question 5 - Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+#
+# We determined that the maximum observed IBU was 138 in Oregon for Bitter Bitch Imperial IPA that 
+# is an American Double/ Imperial IPA from the Astoria Brewing Company in Austoria, OR. 
+# 
+# We also determined that maximum observed ABV was 12.8% in Colorado for Lee Hill Series Vol. 5 – 
+# Belgian Style Quadrupel Ale from Upslope Brewing Company in Boulder, CO.
+#
 #############################################################################################################
 #Figure out which has highest ABV
 maxABV <- arrange(buzzbrews, desc(ABV))
@@ -572,6 +592,7 @@ hABV %>%
   theme_classic()
 
 ###################################################
+###################################################
 ###### Create DF for just the max IBU values ######
 hIBU <- buzzbrews %>% 
   group_by(State) %>%
@@ -601,6 +622,14 @@ hIBU %>%
 
 ```
 
+
+```{r}
+######################
+#                    #
+#     Question 6     #
+#                    #
+######################
+#############################################################################################################
 # Question 6 - Comment on the summary statistics and distribution of the ABV variable.
 #
 # We observed summary statistics from the ABV data showing that once we filled in the missing 
@@ -611,16 +640,7 @@ hIBU %>%
 # upon further review noticed this is where many commonly mass produced beers fall, for example: Bud 
 # Ice (5.5%), Bud Light Platinum (6%), Natural Ice (5.9%), Bud Ice (5.5%), Budweiser (5%), Blue Moon 
 # (5%), Stella Artois (5%), Heinekin (5%), Pabst Blue Ribbon (4.74%) and Miller Genuinine Draft (4.6%).
-
-
-```{r}
-######################
-#                    #
-#     Question 6     #
-#                    #
-######################
-#############################################################################################################
-#Comment on the summary statistics and distribution of the ABV variable.
+#
 #############################################################################################################
 # Check on the distribution of ABV
 hist(buzzbrews$ABV, col = "#c8102e",
@@ -650,6 +670,13 @@ ABVsummary
 
 ```
 
+```{r}
+######################
+#                    #
+#     Question 7     #
+#                    #
+######################
+#############################################################################################################
 # Question 7 - Is there an apparent relationship between the bitterness of the beer and its 
 # alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and 
 # EXPLAIN your answer.
@@ -658,19 +685,8 @@ ABVsummary
 # IBU and ABV, in other words can IBU determine ABV or can ABV be used to determine IBU. 
 # There was evidence of a positive relationship, but and we will discuss this further shortly, 
 # it appears one can potentially predict the other.
-
-
-```{r}
-######################
-#                    #
-#     Question 7     #
-#                    #
-######################
+#
 #############################################################################################################
-#Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
-#############################################################################################################
-
-
 ## Calculate slope and intercept of line of best fit ##
 comparisonCoef <- coef(lm(ABV ~ IBU, buzzbrews))
 comparisonCoef
@@ -691,15 +707,23 @@ buzzbrews %>%
 ```
 
 
-#Question 8 - .  Budweiser would also like to investigate the difference with respect to IBU and ABV 
+```{r}
+######################
+#                    #
+#     Question 8     #
+#                    #
+######################
+#############################################################################################################
+# Question 8 - .  Budweiser would also like to investigate the difference with respect to IBU and ABV 
 # between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).
 # You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one
 # way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy 
 # to understand conceptually.
-#In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may
+# In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may
 # also feel free to supplement your response to this question with any other methods or techniques you have
 # learned.  Creativity and alternative solutions are always encouraged.  
 #
+# Response: 
 # We built a kNN (nearest neighbor) classifier to see if there is a difference between IPA and Ale, and while
 # we were at it, we also added in a third class called, "neither." In building the kNN, we wanted to explore 
 # what the appropriate number of "neighbors" was to compare to since there is so many observations so close
@@ -719,20 +743,10 @@ buzzbrews %>%
 # Ale         3.5     5.4    12.8       7    31       120
 # IPA         4       6.7     9.9      19    67.6     138
 # neither     0.1     5.5    12.5       0    28       130
-
-
-
-```{r}
-######################
-#                    #
-#     Question 8     #
-#                    #
-######################
-#############################################################################################################
-#Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually
-#############################################################################################################
-#############################################################################################################
-#In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.
+#
+# Additionally we re-visualized the plot chart with a regression line from the previous question, this 
+# time showing the plots colored based on the classification of Ale, IPA or neither.
+#
 #############################################################################################################
 
 
@@ -772,17 +786,11 @@ plot(seq(1,numks,1),MeanAcc, type = "l")
 
 # Locate the value of k based on the best MeanAcc in the dataframe
 kvalue = match(max(MeanAcc), MeanAcc)
-kvalue
 max(MeanAcc)
 
 ####### Best value of k = 8 at 63.4% Accuracy #####################
 ####### Train the model using k = 8 #####################
-for(i in 1:iterations)
-  {
-  knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = kvalue)
-  }
-
-classifications = knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = kvalue)
+classifications = knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = kvalue, use.all = TRUE)
   table(classifications,test$IPAAle)
   CM = confusionMatrix(table(classifications,test$IPAAle))
 CM
@@ -812,6 +820,23 @@ IPAAleSummary <- buzzbrews %>%
                    IBU.med = median(IBU),
                    IBU.max = max(IBU))
 IPAAleSummary
+########################################################
+##### Replot and color by beer style ###################
+comparisonCoef <- coef(lm(ABV ~ IBU, buzzbrews))
+comparisonCoef
+#  (Intercept)    MaxIBU 
+#   4.71799073  0.03142639 
+
+buzzbrews %>% 
+  ggplot(aes(x = IBU, y = ABV, color = IPAAle)) +
+  geom_point(show.legend = TRUE, na.rm = TRUE) +
+  geom_abline(intercept =  comparisonCoef[1] , slope = comparisonCoef[2], color = "#c8102E", size = 1) +
+  theme_classic() + 
+  labs(title = "IBU vs ABV", 
+       subtitle = "Budweiser Consultation",
+       y = "Alcoholic By Volume", 
+       x = "Int'l Bitterness Unit",
+       caption="ABV and IBU values imputed where necessary.")
 
 ```
 
