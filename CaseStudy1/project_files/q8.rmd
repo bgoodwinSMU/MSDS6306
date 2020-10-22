@@ -1,0 +1,50 @@
+#############################################################################################################################################
+#Alternative technique for classifcation
+#Hypothesis: Naive Bayes is a stronger ML technique for categorical data
+#We implemented a Naive Bayes classifer based on IBU and ABV as a predictor of categotization of style of beer (IPA,Ale, or Neither)
+#############################################################################################################################################
+
+#############################################################################################################################################
+#Create new DF for Naive Bayes classifer (Don't want to interfere with original Buzzbrews DF)
+bayesDat <- buzzbrews
+#Make the classifer happy and convert outcome to factor
+bayesDat$IPAAle <- as.factor(bayesDat$IPAAle)
+#Run this loop to run classifier 100 times to determine mean accruary
+iterations = 100
+masterAcc = matrix(nrow = iterations,ncol=3)
+#Begin the loop
+for(j in 1:iterations)
+{
+#change seed each iteration
+set.seed(j)
+
+#Determine training and testing indicices   
+trainIndices = sample(seq(1:length(bayesDat$Beer)),round(.8*length(bayesDat$Beer)))
+trainBeer = bayesDat[trainIndices,]
+testBeer = bayesDat[-trainIndices,]
+
+#Generate model, table, and confusion matrix
+model = naiveBayes(trainBeer[,c(7,8)],trainBeer$IPAAle)
+table(predict(model,testBeer[,c(7,8)]),testBeer$IPAAle)
+CM = confusionMatrix(table(predict(model,testBeer[,c(7,8)]),testBeer$IPAAle))
+
+#Insert current accuracies
+masterAcc[j,1] = CM$overall[1]
+masterAcc[j,2] = CM$byClass[1]
+masterAcc[j,3] = CM$byClass[2]
+}
+#Mean accuracy
+MeanAcc = colMeans(masterAcc)
+MeanAcc
+#Confusion matrix
+CM
+#############################################################################################################################################
+
+#############################################################################################################################################
+#Naive Bayes Summary
+#In summary the classifer correctly selects IPA about 61% of the time, all other ales around 63% of the time, and handles "other" beers about 84% of the time.
+#These are consistent with what we can expect from a classifer, and this model in particular does especially well at identifying beers that aren't in the specified categories, this is unsurpirsing as many beers do not fall into this category.
+#This classifer complements the KNN classifier as KNN is strong at identifying similar beers, and the Bayesian classifier better handles
+#non-grouped beers
+#############################################################################################################################################
+
