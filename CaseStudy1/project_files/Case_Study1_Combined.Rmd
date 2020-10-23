@@ -38,12 +38,17 @@ library(readr)
 library(tibble)
 library(tidyverse)
 library(robustbase)
-library(plyr)
 library(class)
 library(caret)
 library(e1071)
 library(dplyr)
+library(codebook)
+library(future)
+library(fmsb)
+library(ggraph)
+library(igraph)
 library(RColorBrewer)
+library(car)
 ######################
 ######################
 #                    #
@@ -61,6 +66,9 @@ regionData <- read.csv("state-geocodes-v2017.csv")
 regionData <- regionData[,c(-1,-2)]
 regionData <- dplyr::rename(regionData, "FIPS"="State..FIPS.", "Region" = "Region.1", "Division" = "Division.1")
 regionData$State <- trimws(regionData$State)
+
+
+
 #Ensure structure of data is compliant 
 #head(breweryDat)
 #read in beer data
@@ -76,7 +84,6 @@ for (i in 1:count) {
     beerDat[i,3] <- beerDat[i,3]*100
   }
 }
-
 
 #Ensure structure of data is compliant 
 #head(beerDat)
@@ -190,17 +197,45 @@ Pplot
 #########################################################
 #########################################################
 
+# Add label column to brewByState
+brewByState$Label <- paste(brewByState$State, brewByState$n)
+#Add Regional Data to brewByState
+brewByState <- merge(brewByState, regionData, by = "State")
+brewByState <- brewByState[,-c(4,5)]
+
+# Sum up state brewery count by division for labeling
+brewSum <- brewByState %>%
+  group_by(Division) %>%
+  dplyr::summarise(SumBreweries = sum(n))
+
+brewByState <- merge(brewByState, brewSum, by = "Division")
+
+labelDF <- str_wrap(brewByState$Division, width = 10)
+labelDF
+
 #### Bar Plot ####
 
 #Plot overall breweries by state in bar chart
 
-brewByState %>% ggplot(aes(y=reorder(State, n), x= n, fill = "#C8102E")) +
-  geom_bar(stat = "identity", show.legend = FALSE, position = 'dodge') +
-  geom_text(aes(label = brewByState$n), position=position_dodge(width=0.9), hjust = -0.25, vjust= .2, size = 3) +
-  theme_classic() + 
-  labs(title = "Breweries by State in the USA", 
-       subtitle = "Budweiser Consultation",
-       x = "Number of Breweries", y = "State")
+brewByState %>%
+  ggplot(aes(x=Division, y=n,fill= reorder(State,-n))) +   
+  # Create stacked by chart organized by Division with States stacked in each bar
+  geom_bar(aes(color = "#c8102e"),stat="identity", width= 0.7, 
+           position = position_stack(), show.legend = FALSE) + 
+  # Add state and ABV value to each state's chart position
+  geom_text(aes(label = Label), size = 2, position = position_stack(vjust = .5), ) +
+  # Add Division ABV Values to top of each chart stack
+  geom_text(aes(Division, SumBreweries, label = SumBreweries), size = 3, 
+            nudge_y = 3, fontface = "italic") +
+  # Label the chart objects
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  labs(title="Number of Breweries by State by US Census Division in the USA", 
+       subtitle="Budweiser Consultation", 
+       y = "Number of BreweriesAlcohol By Volume",
+       x = "States by US Census Divisions ") + 
+  theme_classic() +
+  # Adjust the X-axis labels, remove y-labels since this is a stacked chart
+  theme(axis.text.y = element_blank(), axis.ticks = element_blank()) 
 
 ```
 
@@ -395,10 +430,12 @@ for(i in 1:iterations){
     buzzbrews[i,8] <- 0
   }
 }
-#Check out end results
+#Check out end results - look for any leftover NAs in DF
+sapply(buzzbrews, function(x) sum(is.na(x)))
+# Add in the regional data from the census bureau
 buzzbrews <- merge(buzzbrews, regionData, by = "State")
-
-View(buzzbrews)
+# View new dataframe
+view(buzzbrews)
 ```
 
 
@@ -465,7 +502,7 @@ combineddf <- merge(combineddf, StateSums, by = "Division")
 #
 ############################################################
 #########                                   ################
-######### Draw Bar Chart = Median State ABV ################
+######### Draw Bar Charts                   ################
 #########                                   ################
 ############################################################
 #
@@ -484,9 +521,11 @@ combineddf %>%
        y = "Alcohol By Volume",
        x = "States by US Census Divisions ") + 
   theme_classic() +
-  # Adjust the X-axis labels, remove y-labels since this is a stacked chart
-  theme(axis.text.x = element_text(angle=90, vjust = 0.5,hjust = 1), 
-        axis.text.y = element_blank(), axis.ticks = element_blank())
+  # Remove y-labels and ticks since this is a stacked chart
+  theme(axis.text.y = element_blank(), axis.ticks = element_blank()) +
+  # Wrap X-axis labels
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))
+
 #
 ##### Create bar plot for IBU #####
 #
@@ -505,37 +544,10 @@ combineddf %>%
        y = "Median Int'l Bitterness Unit",
        x = "States by US Census Divisions ") + 
   theme_classic() +
-  # Adjust the X-axis labels, remove y-labels since this is a stacked chart
-  theme(axis.text.x = element_text(angle=90, vjust = 0.5,hjust = 1), 
-        axis.text.y = element_blank(), axis.ticks = element_blank())
-#
-#
-####################################################
-##                                                ##
-## Scatterplot MedStateIBU vs MedStateABV by State  ##
-##                                                ##
-####################################################
-
-## Calculate slope and intercept of line of best fit ##
-abline_values <- coef(lm(MedStateABV ~ MedStateIBU, combineddf))
-#  (Intercept) MedStateABV 
-#   14.5377926    0.4013998 
-
-ggplot(combineddf,aes(x = MedStateIBU, y = MedStateABV, color = State)) +
-  geom_point(show.legend = FALSE) +
-  # Add ABLine to the chart to see if there is a linear relationship
-  geom_abline(intercept = abline_values[1] , slope = abline_values[2] , color = "#c8102E", size = 1) +   
-  # Add state labels, but only for outliers
-  geom_text(data = subset(combineddf,MedStateIBU > 45 | MedStateABV < 4.5, 
-                          select = c(State, MedStateIBU, MedStateABV)), 
-            aes(label = State), vjust= -0.6, size = 3, na.rm = TRUE, 
-            show.legend = FALSE, color = "#000000") +
-  theme_classic() + 
-  labs(title = "Median State ABV vs Median State IBU", 
-       subtitle = "Budweiser Consultation",
-       y = "Median Alcoholic By Vol", 
-       x = "Median Int'l Bitterness Unit",
-       caption = "NOTE: Missing ABV and IBU values imputed")
+  # Remove y-labels and ticks since this is a stacked chart
+  theme(axis.text.y = element_blank(), axis.ticks = element_blank()) +
+  # Wrap X-axis labels
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))
 
 ```
 
@@ -613,11 +625,13 @@ maxStateValues <- merge(maxStateValues, StateMaxSums, by = "Division")
 maxStateValues %>%
   ggplot(aes(x=Division, y=MaxStateABV,fill= reorder(State,-MaxStateABV))) +   
   # Create stacked by chart organized by Division with States stacked in each bar
-  geom_bar(aes(color = "#c8102e"),stat="identity", width= 0.7, position = position_stack(), show.legend = FALSE) + 
+  geom_bar(aes(color = "#c8102e"),stat="identity", width= 0.7, 
+           position = position_stack(), show.legend = FALSE) + 
   # Add state and ABV value to each state's chart position
   geom_text(aes(label = ABVmaxLabel), size = 3, position = position_stack(vjust = 0.5)) + 
   # Add Division ABV Values to top of each chart stack
-  geom_text(aes(Division, MaxDivABV + SumStateABV, label = MaxDivABV), size = 3, nudge_y = -7, fontface = "italic") +
+  geom_text(aes(Division, MaxDivABV + SumStateABV, label = MaxDivABV), size = 3, 
+            nudge_y = -7, fontface = "italic") +
   # Label the chart objects
   labs(title="Max ABV by State by US Census Division in the USA", 
        subtitle="Budweiser Consultation", 
@@ -625,9 +639,10 @@ maxStateValues %>%
        y = "Alcohol By Volume",
        x = "States by US Census Divisions ") + 
   theme_classic() +
-  # Adjust the X-axis labels, remove y-labels since this is a stacked chart
-  theme(axis.text.x = element_text(angle=90, vjust = 0.5,hjust = 1), 
-        axis.text.y = element_blank(), axis.ticks = element_blank())
+  # Remove y-labels and ticks since this is a stacked chart
+  theme(axis.text.y = element_blank(), axis.ticks = element_blank()) +
+  # Wrap X-axis labels
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))
 
 
 ###################################################
@@ -636,11 +651,13 @@ maxStateValues %>%
 maxStateValues %>%
   ggplot(aes(x=Division, y=MaxStateIBU,fill= reorder(State,-MaxStateIBU))) +   
   # Create stacked by chart organized by Division with States stacked in each bar
-  geom_bar(aes(color = "#c8102e"),stat="identity", width= 0.7, position = position_stack(), show.legend = FALSE) + 
+  geom_bar(aes(color = "#c8102e"),stat="identity", width= 0.7, 
+           position = position_stack(), show.legend = FALSE) + 
   # Add state and ABV value to each state's chart position
   geom_text(aes(label = IBUmaxLabel), size = 3, position = position_stack(vjust = 0.5)) + 
   # Add Division ABV Values to top of each chart stack
-  geom_text(aes(Division, MaxDivIBU + SumStateIBU, label = MaxDivIBU), size = 3, nudge_y = -75, fontface = "italic") +
+  geom_text(aes(Division, MaxDivIBU + SumStateIBU, label = MaxDivIBU), 
+            size = 3, nudge_y = -75, fontface = "italic") +
   # Label the chart objects
   labs(title="Max IBU by State by US Census Division in the USA", 
        subtitle="Budweiser Consultation", 
@@ -648,9 +665,10 @@ maxStateValues %>%
        y = "Alcohol By Volume",
        x = "States by US Census Divisions ") + 
   theme_classic() +
-  # Adjust the X-axis labels, remove y-labels since this is a stacked chart
-  theme(axis.text.x = element_text(angle=90, vjust = 0.5,hjust = 1), 
-        axis.text.y = element_blank(), axis.ticks = element_blank())
+  # Remove y-labels and ticks since this is a stacked chart
+  theme(axis.text.y = element_blank(), axis.ticks = element_blank()) +
+  # Wrap X-axis labels
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))
 
 ```
 
@@ -666,7 +684,7 @@ maxStateValues %>%
 #
 # We observed summary statistics from the ABV data showing that once we filled in the missing 
 # values as best as we could, there was a range of 0.10% to 12.80% with a median of 5.65% (median
-# is simply the middle value if we were to arrange all the ABVs in either decending or ascending order).
+# is simply the middle value if we were to arrange all the ABVs in either descending or ascending order).
 #
 # We also found a very common range within the overall range that went from 5.0% ABV to 6.70% ABV and 
 # upon further review noticed this is where many commonly mass produced beers fall, for example: Bud 
@@ -675,30 +693,24 @@ maxStateValues %>%
 #
 #############################################################################################################
 # Check on the distribution of ABV
-hist(buzzbrews$ABV, col = "#c8102e",
-     main = "Histogram of ABV Distribution",
-     sub = "Busweiser Consultation",
-     xlab = "ABV Ratings")
-densityABV <- density(buzzbrews$ABV)
-plot(densityABV, 
-     main = "Kernel Density of Alcohol By Volume", 
-     sub = "Budweiser Consultation",
-     xlab = "ABV Ratings")
-polygon(densityABV, col = "#c8102e")
 
+# Add histogram of ABV distribution
+buzzbrews %>%
+  ggplot(aes(x = ABV)) +
+  geom_histogram(binwidth = 1, color = "#ffffff", fill = "#c8102e") +
+  scale_x_continuous(breaks = seq(0, 14, by = 1)) +
+  stat_bin(binwidth = 1, aes(label = ..count..), vjust = -0.5, geom = "text", size = 3) +
+  labs(title = "Histogram of ABV Distribution",
+     subtitle = "Busweiser Consultation",
+     x = "ABV Values",
+     y = "Number of Beers",
+     caption = "source: ABV imputed where necessary.") +
+  theme_classic()
+  
+  
 
 ABVsummary <- summary(buzzbrews$ABV)
 ABVsummary
-
-############### Not sure what we want to do down here ##################
-#ABVSumNames <- names(ABVsummary)
-#ABVSumNames <- as.factor(ABVSumNames)
-#ABVsummary <- as.list(unname(ABVsummary))
-#ABVsum <- data.frame(ABVsummary)
-#ABVsum <- (ABVSumNames)
-#as.data.frame(ABVsum)
-#ABVsum <- rename(ABVsum, "Summary"="", "Value"="ABVsummary")
-########################################################################
 
 ```
 
@@ -719,12 +731,22 @@ ABVsummary
 # it appears one can potentially predict the other.
 #
 #############################################################################################################
+# Label Ales, IPAs and neither - this is also setting up for the next question, 
+# but we want to be able to utilize it here
+buzzbrews$IPAAle = case_when(grepl("\\bIPA\\b", buzzbrews$Beer, ignore.case = TRUE) ~ "IPA",
+                             grepl("\\bindia pale ale\\b", buzzbrews$Beer, ignore.case = TRUE) ~ "IPA",
+                             grepl("\\bale\\b", buzzbrews$Beer, ignore.case = TRUE ) ~ "Ale",
+                             TRUE ~ "Neither")
+view(buzzbrews)
+
+
 ## Calculate slope and intercept of line of best fit ##
 comparisonCoef <- coef(lm(ABV ~ IBU, buzzbrews))
 comparisonCoef
 #  (Intercept)    MaxIBU 
 #   4.71799073  0.03142639 
 
+# Remove this chart if we decide to use the one labeled with IPA, Ale, Neither
 buzzbrews %>% 
   ggplot(aes(x = IBU, y = ABV, color = "#c8102e")) +
   geom_point(show.legend = FALSE, na.rm = TRUE) +
@@ -732,9 +754,24 @@ buzzbrews %>%
   theme_classic() + 
   labs(title = "IBU vs ABV", 
        subtitle = "Budweiser Consultation",
-       y = "Alcoholic By Volume", 
+       y = "Alcohol By Volume", 
        x = "Int'l Bitterness Unit",
        caption="ABV and IBU values imputed where necessary.")
+
+buzzbrews %>% 
+  ggplot(aes(x = IBU, y = ABV, color = IPAAle)) +
+  geom_point(show.legend = TRUE, na.rm = TRUE) +
+  geom_abline(intercept =  comparisonCoef[1] , slope = comparisonCoef[2], color = "#c8102E", size = 1) +
+  theme_classic() + 
+  labs(title = "IBU vs ABV", 
+       subtitle = "Budweiser Consultation",
+       y = "Alcohol By Volume", 
+       x = "Int'l Bitterness Unit",
+       caption="ABV and IBU values imputed where necessary.") +
+  scale_color_manual(values = c("#c8102e","#13294b","#b1b3b3"),
+                     name = "Type of Beer",
+                     breaks = c("Ale", "IPA", "Neither"),
+                     labels = c("Ale", "IPA", "Neither"))
 
 ```
 
@@ -757,18 +794,17 @@ buzzbrews %>%
 #
 # Response: 
 # We built a kNN (nearest neighbor) classifier to see if there is a difference between IPA and Ale, and while
-# we were at it, we also added in a third class called, "neither." In building the kNN, we wanted to explore 
+# we were at it, we also added in a third class called, "Neither." In building the kNN, we wanted to explore 
 # what the appropriate number of "neighbors" was to compare to since there is so many observations so close
 # together (think New York city and all the noise generated). We found that generally 8 neighbors were the 
 # best estimation (we randomly parsed the data 100 times to find the best neighbors value). 
 #
-# Our classifier was accurate in determining if a beer was an Ale, IPA or neither about 64.5% of the time
-# when we used 8 nearest neighbors.
+# Our classifier was accurate in determining if a beer was an Ale, IPA or Neither between 59% and 67% of the time (maybe 63%-64% to be more precise) when we used 8 nearest neighbors.
 # Next we created some random pairings of IBU and ABV to see how the classifier handled the data and discovered 
-# it again was about 64.5% accurate. It is far more accurate identifyly neither style of beer 78% of the time, 
+# it again was about 64.5% accurate. It is far more accurate identify Neither style of beer 78% of the time, 
 # then IPAs 67.5% of the time and Ale's 26% of the time.
 # We also look a look at the ranges for IBU and ABV for each of the 3 broad types of beers IPA, Ale or 
-# "neither" and found the following results, showing that it should be more difficult to predict between 
+# "Neither" and found the following results, showing that it should be more difficult to predict between 
 # the 3 different types of beers.
 # 
 # IPAAle  ABV.min ABV.med ABV.max IBU.min IBU.med IBU.max
@@ -781,14 +817,7 @@ buzzbrews %>%
 #
 #############################################################################################################
 
-
-#Label Ales, IPAs and neither
-buzzbrews$IPAAle = case_when(grepl("\\bIPA\\b", buzzbrews$Beer, ignore.case = TRUE) ~ "IPA",
-                             grepl("\\bindia pale ale\\b", buzzbrews$Beer, ignore.case = TRUE) ~ "IPA",
-                             grepl("\\bale\\b", buzzbrews$Beer, ignore.case = TRUE ) ~ "Ale",
-                             TRUE ~ "neither")
-view(buzzbrews)
-
+### For all IPA/ Ale/ Neither ###################################
 ##### Find the best value of K and train the model ##############
 iterations = 100
 numks = 25
@@ -828,7 +857,7 @@ kvalue
 
 ####### Best value of k = 8 between 59% - 67% Accuracy #####################
 ####### Train the model using k = 8 #####################
-classifications = knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = kvalue, use.all = TRUE)
+classifications = class::knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = kvalue, use.all = TRUE)
   table(classifications,test$IPAAle)
   CM = confusionMatrix(table(classifications,test$IPAAle))
 CM
@@ -837,12 +866,12 @@ CM
 ####### Test the Classifier with some random data ###
 classifyMyBeers <- data.frame(ABV = c(6,6,5,4,5, 12, 7), 
        IBU = c(78, 65, 55, 38, 100, 148, 98))
-classifications = knn(train[,c(7,8)],classifyMyBeers,train$IPAAle, prob = TRUE, k = kvalue)
+classifications = class::knn(train[,c(7,8)],classifyMyBeers,train$IPAAle, prob = TRUE, k = kvalue)
 
 classifications
 
 
-############ Test Results #######################
+############ Test Results after one Pass #######################
 #Class: neither   Ale       Ale       neither   IPA       neither   IPA    
 #Prob:  0.6250000 0.6250000 0.6250000 0.7500000 0.7500000 0.5000000 0.7777778
 ##################################################
@@ -857,7 +886,8 @@ IPAAleSummary <- buzzbrews %>%
                    IBU.min = min(IBU), 
                    IBU.med = median(IBU),
                    IBU.max = max(IBU))
-IPAAleSummary
+view(IPAAleSummary)
+write.csv(IPAAleSummary, file = "IPA_Ale_Summary.csv")
 ########################################################
 ##### Replot and color by beer style ###################
 comparisonCoef <- coef(lm(ABV ~ IBU, buzzbrews))
@@ -872,9 +902,114 @@ buzzbrews %>%
   theme_classic() + 
   labs(title = "IBU vs ABV", 
        subtitle = "Budweiser Consultation",
-       y = "Alcoholic By Volume", 
+       y = "Alcohol By Volume", 
        x = "Int'l Bitterness Unit",
-       caption="ABV and IBU values imputed where necessary.")
+       caption="ABV and IBU values imputed where necessary.") +
+  scale_color_manual(values = c("#c8102e","#13294b","#b1b3b3"),
+                     name = "Type of Beer",
+                     breaks = c("Ale", "IPA", "Neither"),
+                     labels = c("Ale", "IPA", "Neither"))
+                     
+#################################################################
+#################################################################
+###                                               ###############
+### For only  IPA $ Ale                           ###############
+##### Find the best value of K and train the model###############
+#####                                             ###############
+#################################################################
+
+# Create new DF so not to confuse with buzzbrews
+# Filter Ales and IPAs only
+buzzKNN <- dplyr::filter(buzzbrews, IPAAle == "IPA" | IPAAle == "Ale")
+
+iterations = 100
+numks = 25
+splitPerc = .70
+set.seed(33)
+
+masterAcc = matrix(nrow = iterations, ncol = numks)
+  
+for(j in 1:iterations)
+{
+accs = data.frame(accuracy = numeric(30), k = numeric(30))
+trainIndices = sample(1:dim(buzzKNN)[1],round(splitPerc * dim(buzzKNN)[1]))
+train = buzzKNN[trainIndices,]
+test = buzzKNN[-trainIndices,]
+for(i in 1:numks)
+  {
+  classifications = class::knn(train[,c(7,8)],test[,c(7,8)],train$IPAAle, prob = TRUE, k = i)
+  table(classifications,test$IPAAle)
+  CM = confusionMatrix(table(classifications,test$IPAAle))
+  masterAcc[j,i] = CM$overall[1]
+  }
+}
+
+MeanAcc = colMeans(masterAcc)
+# Visually find the best value of k by using it's location in the dataframe based on the highest Mean value
+plot(seq(1,numks,1),MeanAcc, type = "l", 
+     col = "#c8201e",
+     main = "Value for K Neighbors vs Accuracy", 
+     sub = "Budweiser Consultation",
+     xlab = "Value of K Neighbors",
+     ylab = "Accuracy Rate (Percentage)")
+
+# Locate the value of k based on the best MeanAcc in the dataframe
+kvalue = match(max(MeanAcc), MeanAcc)
+max(MeanAcc)
+kvalue
+
+####### Best value of k = 8 between 59% - 67% Accuracy #####################
+####### Train the model using k = 8 #####################
+
+
+
+####### Test the Classifier with some random data ###
+classifyMyBeers <- data.frame(ABV = c(6,6,5,4,5, 12, 7), 
+       IBU = c(78, 65, 55, 38, 100, 148, 98))
+classifications = class::knn(train[,c(7,8)],classifyMyBeers,train$IPAAle, prob = TRUE, k = kvalue)
+
+classifications
+
+
+############ Test Results after one Pass #######################
+#Class: neither   Ale       Ale       neither   IPA       neither   IPA    
+#Prob:  0.6250000 0.6250000 0.6250000 0.7500000 0.7500000 0.5000000 0.7777778
+##################################################
+
+
+############# Summary data by classification #############
+IPAAleSummary <- buzzbrews2 %>% 
+  group_by(IPAAle) %>% 
+  dplyr::summarise(ABV.min = min(ABV), 
+                   ABV.med = median(ABV),
+                   ABV.max = max(ABV), 
+                   IBU.min = min(IBU), 
+                   IBU.med = median(IBU),
+                   IBU.max = max(IBU))
+view(IPAAleSummary)
+IPAAleSummary
+
+########################################################
+##### Replot and color by beer style ###################
+comparisonCoef <- coef(lm(ABV ~ IBU, buzzbrews2))
+comparisonCoef
+#  (Intercept)    MaxIBU 
+#   4.71799073  0.03142639 
+
+buzzbrews2 %>% 
+  ggplot(aes(x = IBU, y = ABV, color = IPAAle)) +
+  geom_point(show.legend = TRUE, na.rm = TRUE) +
+  geom_abline(intercept =  comparisonCoef[1] , slope = comparisonCoef[2], color = "#c8102E", size = 1) +
+  theme_classic() + 
+  labs(title = "IBU vs ABV", 
+       subtitle = "Budweiser Consultation",
+       y = "Alcohol By Volume", 
+       x = "Int'l Bitterness Unit",
+       caption="ABV and IBU values imputed where necessary.") +
+  scale_color_manual(values = c("#c8102e","#13294b","#b1b3b3"),
+                     name = "Type of Beer",
+                     breaks = c("Ale", "IPA", "Neither"),
+                     labels = c("Ale", "IPA", "Neither"))
 
 ```
 
@@ -887,4 +1022,61 @@ buzzbrews %>%
 #############################################################################################################
 #Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
 #############################################################################################################
+#############################################################################################################################################
+#Alternative technique for classifcation
+#Hypothesis: Naive Bayes is a stronger ML technique for categorical data
+#We implemented a Naive Bayes classifer based on IBU and ABV as a predictor of categotization of style of beer (IPA,Ale, or Neither)
+#############################################################################################################################################
+#Naive Bayes Summary
+#In summary the classifer correctly selects IPA about 61% of the time, all other ales around 63% of the time, and handles "other" beers about 84% of the time.
+#These are consistent with what we can expect from a classifer, and this model in particular does especially well at identifying beers that aren't in the specified categories, this is unsurpirsing as many beers do not fall into this category.
+#This classifer complements the KNN classifier as KNN is strong at identifying similar beers, and the Bayesian classifier better handles
+#non-grouped beers
+#############################################################################################################################################
+#Create new DF for Naive Bayes classifier (Don't want to interfere with original buzzbrews DF)
+bayesDat <- dplyr::filter(buzzbrews, IPAAle == "IPA" | IPAAle == "Ale")
+#Make the classifier happy and convert outcome to factor
+bayesDat$IPAAle <- as.factor(bayesDat$IPAAle)
+#Run this loop to run classifier 100 times to determine mean accuracy
+iterations = 100
+masterAcc = matrix(nrow = iterations,ncol=3)
+#Begin the loop
+for(j in 1:iterations)
+{
+#change seed each iteration
+set.seed(j)
+
+#Determine training and testing indicies   
+trainIndices = sample(seq(1:length(bayesDat$Beer)),round(.8*length(bayesDat$Beer)))
+trainBeer = bayesDat[trainIndices,]
+testBeer = bayesDat[-trainIndices,]
+
+#Generate model, table, and confusion matrix
+model = naiveBayes(trainBeer[,c(7,8)],trainBeer$IPAAle)
+table(predict(model,testBeer[,c(7,8)]),testBeer$IPAAle)
+CM = confusionMatrix(table(predict(model,testBeer[,c(7,8)]),testBeer$IPAAle))
+
+#Insert current accuracies
+masterAcc[j,1] = CM$overall[1]
+masterAcc[j,2] = CM$byClass[1]
+masterAcc[j,3] = CM$byClass[2]
+}
+#Mean accuracy
+MeanAcc = colMeans(masterAcc)
+
+MeanAcc
+#Confusion matrix
+CM
+#############################################################################################################################################
+
+#############################################################################################################################################
+#Naive Bayes Summary
+#In summary the classifer correctly selects IPA about 61% of the time, all other ales around 63% of the time, and handles "other" beers about 84% of the time.
+#These are consistent with what we can expect from a classifier, and this model in particular does especially well at identifying beers that aren't in the specified categories, this is unsurprising as many beers do not fall into this category.
+#This classifer complements the KNN classifier as KNN is strong at identifying similar beers, and the Bayesian classifier better handles
+#non-grouped beers
+#############################################################################################################################################
+
+
+
 ```
