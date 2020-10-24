@@ -1,6 +1,6 @@
 ---
-title: "Cast Study 1"
-author: "Ben Goodwin"
+title: "DS6306: Cast Study 01"
+author: "Ben Goodwin/ Justin Ehly"
 date: "10/6/2020"
 output: pdf_document
 ---
@@ -10,46 +10,86 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+# Introduction #########
+#
+#
+# The following is an analysis of one-hundred styles of beer brewed in the United States for the executive team,
+# CEO and CFO at Budweiser. Budweiser is interested in exploring the how many breweries are in the United States, 
+# how each beer is reported in terms of its International Bitterness Unit and Alcohol By Content and basic summary
+# statistics and conclusions we are able to uncover with the beer data provided. Statistics will include handling
+# missing data and explaining why it was possibly not included in the initial dataset, as well as uncover median 
+# and maximum (IBU and ABV) ratings by state. Conclusions will include basic summary statics on the ABV variable, 
+# any relationship between the IBU and ABV variables (such as dependencies, e.g. does a higher IBU result in a 
+# higher ABV) and finally we will look to see if we can determine general beer styles (Ales and IPAs) based on 
+# ABV and IBU values. Additionally, we will report on any findings that are discovered during the analysis.
+#
 ######################
 #                    #
 #     Libraries      #
 #                    #
 ######################
-
 ######################
 library(usmap)
 library(ggplot2)
+library(magrittr)
+library(ggplot2)
+library(GGally)
+library(readr)
+library(tibble)
+library(tidyverse)
+library(robustbase)
+library(class)
+library(caret)
+library(e1071)
 library(dplyr)
+library(codebook)
+library(future)
+library(fmsb)
+library(ggraph)
+library(igraph)
+library(RColorBrewer)
+library(car)
 ######################
-
-
 ######################
 #                    #
 #        Data        #
 #                    #
 ######################
-
-
 ########################################################
 #read in brewery data
+setwd("C:/Users/justi/Documents/GitHub/MSDS6306/CaseStudy1/project_files/") 
 breweryDat <- read.csv("breweries.csv")
+breweryDat$State <- trimws(breweryDat$State)
+#datafile to organize states into census regions
+regionData <- read.csv("state-geocodes-v2017.csv")
+regionData <- dplyr::rename(regionData, "FIPS"="State..FIPS.", "Region" = "Region.1", "Division" = "Division.1")
+regionData$State <- trimws(regionData$State)
 #Ensure structure of data is compliant 
 #head(breweryDat)
-
 #read in beer data
-beerDat <- read.csv("beerDat.csv")
+beerDat <- read.csv("beers.csv")
+#Loop to fix leading decimal places on ABV
+i <- 1
+count <- length(beerDat$Name)
+for (i in 1:count) {
+ if(is.na(beerDat[i,3])){
+  beerDat[i,3]=0
+   }
+   if(beerDat[i,3]<1){
+    beerDat[i,3] <- beerDat[i,3]*100
+  }
+}
 #Ensure structure of data is compliant 
 #head(beerDat)
 ########################################################
-
-
 ```
+
 
 #Instructions
 You can assume that your audience is the CEO and CFO of Budweiser (your client) and that they only have had one class in statistics and have indicated that you cannot take more than 7 minutes of their time. 20% of your grade will be based on the presentation. 
 
 They have hired you to answer the 7 questions listed below and beyond those general questions you may speculate / anticipate what may be of interest to them
-
+```
 
 
 
