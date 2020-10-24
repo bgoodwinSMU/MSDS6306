@@ -497,7 +497,8 @@ combineddf %>%
   # Wrap X-axis labels
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10))
 ```
-```
+
+```{r}
 ######################
 #                    #
 #     Question 5     #
