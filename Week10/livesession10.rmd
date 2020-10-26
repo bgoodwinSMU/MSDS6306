@@ -1,0 +1,335 @@
+---
+title: "Live Session 10"
+author: "Ben Goodwin"
+date: "10/26/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+######################
+#                    #
+#     Libraries      #
+#                    #
+######################
+library(dplyr)
+library(ggplot2)
+
+```
+
+
+```{r}
+######################
+#                    #
+#    Question 1,R    #
+#                    #
+######################
+
+#Using the carDat.csv dataset,
+#Conduct a 6 step hypothesis test of the slope.  That is, test the claim that the slope is significantly different from zero. Show all 6 steps and quantify your uncertainty by including a 95% confidence interval for the slope.
+#Describe the relationship between miles per gallon and the weight of the car by interpreting the slope parameter.  Again, be sure and include a 95% confidence interval in your interpretation
+
+#read in data
+carDat <- read.csv("carDat.csv")
+
+#do some EDA
+plot(MPG ~ Weight, data=carDat)+abline(lm(MPG ~ Weight, data=carDat))
+
+#create lm with MPG as reponse, and weight as predictor
+carLm <- lm(MPG~Weight,data=carDat)
+
+#View summary of model
+summary(carLm)
+
+#Look at CI
+confint(carLm)
+
+```
+
+
+
+```{r}
+######################
+#                    #
+#    Question 2,R    #
+#                    #
+######################
+#Using the carDat.csv, conduct an internal n-fold (leave one out) cross validation of the following SLR models:
+#Which model is favored by this cross validation?
+#Describe the relationship between miles per gallon and the weight of the car (if it has changed) (again making sure to #quantify any uncertainty you may have.) 
+#Use the favored model to estimate the mean mpg of carDat that weigh 2000 lbs.
+
+# New Cross Validation 
+set.seed(4)
+TrainObs = sample(seq(1,dim(carDat)[1]),round(.75*dim(carDat)[1]),replace = FALSE)
+carTrain = carDat[TrainObs,]
+carTrain
+carTest = carDat[-TrainObs,]
+carTest
+Model1_fit = lm(MPG ~ Weight, data = carTrain)
+summary(Model1_fit)
+Model1_Preds = predict(Model1_fit, newdata = carTest)
+as.data.frame(Model1_Preds)
+
+
+# Model 1
+MSPE = data.frame(Observed = carTest$MPG, Predicted = Model1_Preds)
+MSPE$Resisdual = MSPE$Observed - MSPE$Predicted
+MSPE$SquaredResidual = MSPE$Resisdual^2
+MSPE
+mean(MSPE$SquaredResidual)
+#Alternative MSPE Calculation
+MSPE = mean((carTest$MPG - Model1_Preds)^2)
+MSPE
+
+
+#Model 2
+Model2_fit = lm(MPG ~ Weight+Weight^2, data = carTrain)
+summary(Model2_fit)
+Model2_Preds = predict(Model2_fit,newdata = carTest)
+as.data.frame(Model2_Preds)
+MSPE = mean((carTest$MPG - Model2_Preds)^2)
+MSPE
+
+```
+
+
+## More Stable Measure ... Average of many MSPEs
+```{r}
+
+######################
+#                    #
+#    Question 2,R    #
+#                    #
+######################
+numMSPEs = 1000
+MSPEHolderModel1 = numeric(numMSPEs)
+MSPEHolderModel2 = numeric(numMSPEs)
+for (i in 1:numMSPEs)
+{
+  TrainObs = sample(seq(1,dim(carDat)[1]),round(.75*dim(carDat)[1]),replace = FALSE)
+  carTrain = carDat[TrainObs,]
+  carTrain
+  carTest = carDat[-TrainObs,]
+  carTest
+  Model1_fit = lm(MPG ~ Weight, data = carTrain)
+  Model1_Preds = predict(Model1_fit, newdata = carTest)
+  
+  #MSPE Model 1
+  MSPE = mean((carTest$MPG - Model1_Preds)^2)
+  MSPE
+  MSPEHolderModel1[i] = MSPE
+  
+  #Model 2
+  set.seed(2412101)
+  TrainObs2 = sample(seq(1,dim(carDat)[1]),round(.75*dim(carDat)[1]),replace = FALSE)
+  carTrain2 = carDat[TrainObs2,]
+  carTrain2
+  carTest2 = carDat[-TrainObs2,]
+  carTest2
+  Model2_fit = lm(MPG ~ Weight+I(Weight^2), data = carTrain2)
+  Model2_Preds = predict(Model2_fit,newdata = carTest2)
+  MSPE2 = mean((carTest2$MPG - Model2_Preds)^2)
+  MSPE2
+  MSPEHolderModel2[i] = MSPE2
+  
+}
+mean(MSPEHolderModel1)
+mean(MSPEHolderModel2)
+summary(Model2_fit)
+
+confint(Model2_fit)
+
+
+
+new.car <- data.frame(Weight = c(2000))
+
+
+predict(Model2_fit, newdata = new.car,interval = "confidence",level = 0.95)
+
+predict(Model2_fit, newdata = new.car, interval = "prediction",level = 0.95)
+
+```
+
+
+```{r}
+######################
+#                    #
+#    Question 3,R    #
+#                    #
+######################
+
+#Using the carDat.csv dataset, We would like to assess the relationship (interpret slope parameter) between mpg and horsepower.  #Notice that some of the horsepowers are missing.  
+#Impute (predict and insert) the missing horsepowers by fitting a regression model. 
+#You may use any of the variables as regressors EXCEPT for mps (since we will later be using horsepower to predict mpg.) 
+#Assess the relationship between the mpg and the slope.  Make sure and include estimates of your uncertainty (ie. Confidence #intervals.) 
+#Use your model and imputed data to estimate the mean mpg for a car with 250 horsepower.  
+
+
+# How many values are missing?
+summary(carDat$Horsepower)
+
+# What rows are missing values?
+missingIdx <- which(is.na(carDat$Horsepower))
+missingIdx
+
+# We can't use MPG so let's look at other relationships for hints
+plot(carDat[,-c(1,2)])
+
+# Weight, Acceleration, and Displacement look promising, let's zoom in
+carDat %>% ggplot(aes(x=Weight, y=Horsepower)) + geom_point() # Increasing SD?
+carDat %>% ggplot(aes(x=Displacement, y=Horsepower)) + geom_point()
+carDat %>% ggplot(aes(x=Acceleration, y=Horsepower)) + geom_point()
+
+# Dispalcement and Acceleration looks good, let's try a first order wth Acceleration
+fit = lm(Horsepower~Acceleration, data=carDat)
+summary(fit)
+confint(fit)
+
+# Scatter plot with line of predicted mean values
+carDat %>% ggplot(aes(x = Acceleration, y = Horsepower)) + geom_point() + geom_smooth(method = "lm") + ggtitle("LR Model: Acceleration vs Horsepower")
+
+# Get accelerration values for missing horsepower rows
+acc1 <- carDat[missingIdx[1],]$Acceleration
+acc2 <- carDat[missingIdx[2],]$Acceleration
+
+# Create two lists to hold our two predictor values
+missingAcc <- c(acc1, acc2)
+
+# Create data frame with correct column names
+missingData <- data.frame(Acceleration = missingAcc)
+
+# Predict horsepower
+predHorse <- predict(fit, newdata = missingData)
+
+# Insert our predicted horsepower
+carDat[missingIdx[1],]$Horsepower <- predHorse[1]
+carDat[missingIdx[2],]$Horsepower <- predHorse[2]
+
+# Sanity check we have no more missing values
+summary(carDat)
+
+# This has at least one curve, let's try a second order
+carDat <- carDat %>% mutate(AccSquared = Acceleration^2)
+squared_fit = lm(Horsepower~Acceleration+AccSquared, data=carDat)
+summary(squared_fit)
+confint(squared_fit)
+
+# Predict mean value for each x value
+squared_preds <- predict(squared_fit)
+
+# Calculate MPSE
+squared_MSPE = mean((carDat$Horsepower - squared_preds)^2)
+print(paste("MSPE:", squared_MSPE))
+
+# Scatter plot with line of predicted mean values for fixed weight
+carDat %>% ggplot(aes(x = Acceleration, y = Horsepower)) + geom_point() + geom_line(data = carDat, aes( x = Acceleration, y = squared_preds, col = "red")) + ggtitle("LR Model: Acceleration + Acceleration^2 vs Horsepower") + scale_color_discrete(name = "Predicted")
+
+# We are getting close, looks like we need another bend near 15, let's try a 3rd order
+carDat <- carDat %>% mutate(AccCubed = Acceleration^3)
+
+# Build another model
+cubed_fit = lm(Horsepower~Acceleration+AccSquared+AccCubed, data=carDat)
+summary(cubed_fit)
+confint(cubed_fit)
+
+# Predict mean value for each x value
+cubed_preds <- predict(cubed_fit)
+
+# Calculate MPSE
+cubed_MSPE = mean((carDat$Horsepower - cubed_preds)^2)
+print(paste("MSPE:", cubed_MSPE))
+
+# Scatter plot with line of predicted mean values for fixed weight
+carDat %>% ggplot(aes(x = Acceleration, y = Horsepower)) + geom_point() + geom_line(data = carDat, aes( x = Acceleration, y = cubed_preds, col = "red")) + ggtitle("LR Model: Acc + Acc^2 + Acc^3 vs Horsepower") + scale_color_discrete(name = "Predicted")
+
+
+# hmmm, accCubed includes zero, better take that back out, let's try adding another feature
+multi_fit = lm(Horsepower~Acceleration+AccSquared+Displacement, data=carDat)
+summary(multi_fit)
+confint(multi_fit)
+
+# Predict mean value for each x value
+multi_preds = predict(multi_fit)
+
+# Calculate MPSE
+multi_MSPE = mean((carDat$Horsepower - multi_preds)^2)
+print(paste("MSPE:", multi_MSPE))
+
+# Huge improvement! Let's press our luck
+last_fit = lm(Horsepower~Acceleration+AccSquared+Displacement+Weight, data=carDat)
+summary(last_fit)
+confint(last_fit)
+
+# Predict mean value for each x value
+last_preds = predict(last_fit)
+
+# Calculate MPSE
+last_MSPE = mean((carDat$Horsepower - last_preds)^2)
+print(paste("MSPE:", last_MSPE))
+
+# Ok, I'm happy with that score. Unfortunately, the shape is now a hyperplane which we can't plot.
+# On to the final question
+# Scatter plot
+carDat %>% ggplot(aes(x = Horsepower, y = MPG)) + geom_point()
+
+# That looks like it decays exponentially so lets try a second order fit
+carDat <- carDat %>% mutate(HorseSquared = Horsepower^2)
+horse_fit = lm(MPG~Horsepower+HorseSquared, data=carDat)
+summary(horse_fit)
+confint(horse_fit)
+
+# Predict mean value for each x value
+horse_preds = predict(horse_fit)
+
+# Calculate MPSE
+horse_MSPE = mean((carDat$MPG - horse_preds)^2)
+print(paste("MSPE:", horse_MSPE))
+
+# Scatter plot with line of predicted mean values for fixed weight
+carDat %>% ggplot(aes(x = Horsepower, y = MPG)) + geom_point() + geom_line(data = carDat, aes( x = Horsepower, y = horse_preds, col = "red")) + ggtitle("LR Model: Horsepower + Horsepower^2 vs MPG") + scale_color_discrete(name = "Predicted")
+
+# Ohhhh so close, lets try a third order
+carDat <- carDat %>% mutate(HorseCubed = Horsepower^3)
+horseCubed_fit = lm(MPG~Horsepower+HorseSquared+HorseCubed, data=carDat)
+summary(horseCubed_fit)
+confint(horseCubed_fit)
+
+# Predict mean value for each x value
+horseCubed_preds = predict(horseCubed_fit)
+
+# Calculate MPSE
+horseCubed_MSPE = mean((carDat$MPG - horseCubed_preds)^2)
+print(paste("MSPE:", horseCubed_MSPE))
+
+# Scatter plot with line of predicted mean values for fixed weight
+carDat %>% ggplot(aes(x = Horsepower, y = MPG)) + geom_point() + geom_line(data = carDat, aes( x = Horsepower, y = horseCubed_preds, col = "red")) + ggtitle("LR Model: Horsepower + Horsepower^2 + Horsepower^3 vs MPG") + scale_color_discrete(name = "Predicted")
+
+# Ahhhhh, we are going backwards. Let's try bringing back in other features
+multiMPG_fit = lm(MPG~Horsepower+HorseSquared+Weight+Acceleration, data=carDat)
+summary(multiMPG_fit)
+confint(multiMPG_fit)
+
+# Predict mean value for each x value
+multiMPG_preds = predict(multiMPG_fit)
+
+# Calculate MPSE
+multiMPG_MSPE = mean((carDat$MPG - multiMPG_preds)^2)
+print(paste("MSPE:", multiMPG_MSPE))
+
+# Winner! Ohhhh no, I don't have values for my other features :sad-face:
+# Fine!
+horse250 <- predict(horse_fit, newdata = data.frame(Horsepower = 250, HorseSquared = 250^2), interval = "confidence")
+horse250
+
+# Plot predicted mean on our graph
+carDat %>% ggplot(aes(x = Horsepower, y = MPG)) + geom_point() + geom_line(data = carDat, aes( x = Horsepower, y = horse_preds, col = "red")) + ggtitle("LR Model: Horsepower + Horsepower^2 vs MPG") + scale_color_discrete(name = "Predicted") + geom_point(aes(x=250, y=floor(horse250[1])), color='blue', shape='square', size=3)
+
+# Yikes! Careful this is extrapolating. We can give a mean mpg value but it comes with a caution
+
+
+```
+
